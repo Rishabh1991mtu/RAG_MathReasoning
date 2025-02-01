@@ -9,7 +9,6 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 # This is not used but required by llama-index and must be set FIRST
 os.environ["OPENAI_API_KEY"] = "sk-abc123"
 
-import pdb;
 
 from llama_index.core import (
     VectorStoreIndex,
@@ -153,7 +152,6 @@ def create_index(_documents):
 
 # @st.cache_resource(show_spinner=False)
 def create_query_engine(_documents):
-    pdb.set_trace()
     """
     Creates a query engine from the provided documents and service context.
 
