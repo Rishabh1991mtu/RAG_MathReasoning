@@ -42,6 +42,8 @@ def rag_pipeline(uploaded_files: list = None):
     # (OPTIONAL) Save Files to Disk #
     #################################
 
+    # This portion of the code saves the user selected documents in a data folder 
+    # SimpleDirectoryReader is used to read the files from the data folder and load them into a list of documents
     if uploaded_files is not None:
         for uploaded_file in uploaded_files:
             with st.spinner(f"Processing {uploaded_file.name}..."):
@@ -54,7 +56,9 @@ def rag_pipeline(uploaded_files: list = None):
     # Create Llama-Index service-context #
     # to use local LLMs and embeddings   #
     ######################################
-
+    
+    # Initialize the LLM and embedding model :
+    # LLM model being used in chat. 
     try:
         llm = ollama_utility.create_ollama_llm(
             st.session_state["selected_model"],
@@ -115,8 +119,10 @@ def rag_pipeline(uploaded_files: list = None):
         st.caption("✔️ Processed File Data")
     else:
         try:
+            # Read files from the data directory : 
             save_dir = os.getcwd() + "/data"
-            documents = llama_index.load_documents(save_dir)
+            # Sending documents to llama_index to for pre-processing (chunking,embeddings) and for creating index
+            documents = llama_index.load_documents(save_dir)           
             st.session_state["documents"] = documents
             st.caption("✔️ Data Processed")
         except Exception as err:
@@ -130,6 +136,7 @@ def rag_pipeline(uploaded_files: list = None):
     ###########################################
 
     try:
+        # Create a query engine from the search index.
         llama_index.create_query_engine(
             st.session_state["documents"],
         )

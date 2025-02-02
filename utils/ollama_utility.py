@@ -187,10 +187,13 @@ def context_chat(prompt: str, query_engine: RetrieverQueryEngine):
     """
 
     try:
-        stream = query_engine.query(prompt)
+        stream = new_func(prompt, query_engine)
         for text in stream.response_gen:
             # print(str(text), end="", flush=True)
             yield str(text)
     except Exception as err:
         logs.log.error(f"Ollama chat stream error: {err}")
         return
+
+def new_func(prompt, query_engine):
+    return query_engine.query(prompt)

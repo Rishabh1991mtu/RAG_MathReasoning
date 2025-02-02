@@ -2,7 +2,7 @@ import streamlit as st
 import utils.logs as logs
 
 from utils.ollama_utility import chat, context_chat
-
+import utils.llama_index as llama_index
 
 def chatbox():
     if prompt := st.chat_input("How can I help?"):
@@ -30,28 +30,25 @@ def chatbox():
                     )
                 )  
                 
-        # Find retrieved chunks : 
+        # Find the embeddings for the retrieved chunks : 
+        # Create an embedding from the prompt using Settings.embed_model      
         
         retrieved_nodes = st.session_state["query_engine"].retrieve(prompt) 
+        logs.log.info(f"retrieved_nodes total is {len(retrieved_nodes)}")
         
-        # Extract metadata.file_name
-        file_name = []
-        for node in retrieved_nodes:
-            # logs.log.info(node)
-            # logs.log.info(f"**Retrieved Document:** {node.text[:200]}...")
-            # logs.log.info(f"**Metadata:** {node.metadata}")
-            if 'file_name' in node.metadata:
-                if node.metadata['file_name'] not in file_name:
-                    file_name.append(node.metadata['file_name'])
+        # Extract filename and scores from retrieved chunks : 
+        
+        file_name = [node.metadata.get('file_name', 'N/A') for node in retrieved_nodes]
+        scores = [round(node.score, 3) for node in retrieved_nodes]
 
         # Add the final response to messages state
         st.session_state["messages"].append({"role": "assistant", "content": response})
         
         citations = "Citations:<br>"       
 
-        # Display  document from which data is retrieved
-        for index,files in enumerate(file_name):
-            citations += (f"{index + 1}. {files} <br>")
+        # Display document from which data is retrieved along with scores
+        for index, (files, score) in enumerate(zip(file_name, scores)):
+            citations += (f"Chunk {index + 1}: (Similarity Score: {score}) Filename : {files}<br>")
         
         with st.chat_message("assistant"):
             st.markdown(citations, unsafe_allow_html=True)
@@ -60,7 +57,7 @@ def chatbox():
         st.session_state["messages"].append({"role": "assistant", "content": response})
 
         # Display the final response
-        logs.log.info(f"response is {response}")
+        #logs.log.info(f"response is {response}")
 
         
         
