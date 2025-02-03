@@ -30,26 +30,38 @@ def chatbox():
                     )
                 )  
                 
-        # Find the embeddings for the retrieved chunks : 
-        # Create an embedding from the prompt using Settings.embed_model      
-        
+        # Retrieve the nodes from the query engine based on the user input.       
         retrieved_nodes = st.session_state["query_engine"].retrieve(prompt) 
         logs.log.info(f"retrieved_nodes total is {len(retrieved_nodes)}")
         
-        # Extract filename and scores from retrieved chunks : 
+        # Extract filename and scores from retrieved chunks and create a dictionary for unique file names
+        file_scores_dict = {}
+        for node in retrieved_nodes:
+            file_name = node.metadata.get('file_name', 'N/A')
+            score = round(node.score, 3)
+            if file_name not in file_scores_dict:
+                file_scores_dict[file_name] = []
+                file_scores_dict[file_name].append(score)
+            else: 
+                file_scores_dict[file_name].append(score)
         
-        file_name = [node.metadata.get('file_name', 'N/A') for node in retrieved_nodes]
-        scores = [round(node.score, 3) for node in retrieved_nodes]
-
         # Add the final response to messages state
         st.session_state["messages"].append({"role": "assistant", "content": response})
         
         citations = "Citations:<br>"       
 
         # Display document from which data is retrieved along with scores
-        for index, (files, score) in enumerate(zip(file_name, scores)):
-            citations += (f"Chunk {index + 1}: (Similarity Score: {score}) Filename : {files}<br>")
-        
+        chunk_index = 1
+        file_index = 1
+        for file_name, scores in file_scores_dict.items():
+            citations += f"<h4>{file_index}. Filename: {file_name}<h4><br>"
+            citations += "<table><tr><th>Chunk</th><th>Similarity Score</th></tr>"
+            file_index += 1
+            for score in scores:
+                citations += f"<tr><td>{chunk_index}</td><td>{score}</td></tr>"
+                chunk_index += 1
+            citations += "</table><br>"
+
         with st.chat_message("assistant"):
             st.markdown(citations, unsafe_allow_html=True)
 
@@ -57,7 +69,7 @@ def chatbox():
         st.session_state["messages"].append({"role": "assistant", "content": response})
 
         # Display the final response
-        #logs.log.info(f"response is {response}")
+        logs.log.info(f"response is {response}")
 
         
         
