@@ -16,7 +16,7 @@ def chatbox():
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        logs.log.info(f"prompt is {prompt}")
+        logs.log.info(f"prompt is {prompt}")   
         
         # Generate llama-index stream with user input
         with st.chat_message("assistant "):
@@ -62,6 +62,7 @@ def chatbox():
                 chunk_index += 1
             citations += "</table><br>"
 
+        # Send Citations to chat.
         with st.chat_message("assistant"):
             st.markdown(citations, unsafe_allow_html=True)
 
@@ -70,6 +71,8 @@ def chatbox():
 
         # Display the final response
         logs.log.info(f"response is {response}")
+        
+        
 
         
         
