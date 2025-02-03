@@ -14,6 +14,8 @@ def render_response(response):
         response (str): The response string containing text and LaTeX expressions.
     """
     # Regular expression to extract LaTeX expressions inside square brackets
+    
+    logs.log.info(f"response is {response}")
     latex_pattern = r"\[([^\]]+)\]"
 
     # Find all LaTeX expressions
@@ -30,8 +32,8 @@ def render_response(response):
         if part.endswith("\\"):
             part = part[:-1]  # Remove the trailing backslash
         if part in latex_expressions:
-            st.latex(part)  # Render LaTeX expression
-            #st.latex(r"\lim_{x \to 0} \frac{\sin(x)}{x}")
+            #st.latex(part)  # Render LaTeX expression
+            st.latex(r"[\lim_{x \to 0} \frac{\sin(x)}{x}]")
         else:
             st.markdown(part)  # Render text explanation
 
