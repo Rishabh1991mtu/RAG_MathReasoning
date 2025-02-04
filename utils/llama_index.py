@@ -18,7 +18,7 @@ from llama_index.core import (
     Settings,
 )
 
-global_query_engine = None
+
 
 ###################################
 #
@@ -95,6 +95,7 @@ def load_documents(data_dir: str):
         files = SimpleDirectoryReader(input_dir=data_dir, recursive=True)
         documents = files.load_data(files)        
         logs.log.info(f"Loaded {len(documents):,} documents from files")
+        logs.log.info(f"Document list is {documents}")
         return documents
     except Exception as err:
         logs.log.error(f"Error creating data index: {err}")
@@ -186,18 +187,19 @@ def create_query_engine(_documents):
         #  Vector index generated from set of documents : 
         index = create_index(_documents)
         
-        global_query_engine = index.as_query_engine(
+        query_engine = index.as_query_engine(
             similarity_top_k=st.session_state["top_k"],
             response_mode=st.session_state["chat_mode"],
             streaming=True,
         )
 
         # Assigned query engine object to session state. 
-        st.session_state["query_engine"] = global_query_engine
+        st.session_state["query_engine"]=query_engine
 
         logs.log.info("Query Engine created successfully")
 
-        return global_query_engine
+        return query_engine
+    
     except Exception as e:
         logs.log.error(f"Error when creating Query Engine: {e}")
         raise Exception(f"Error when creating Query Engine: {e}")

@@ -18,7 +18,6 @@ from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryE
 #
 ###################################
 
-
 def create_client(host: str):
     """
     Creates a client for interacting with the Ollama API.

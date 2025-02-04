@@ -1,7 +1,6 @@
 import streamlit as st
 import utils.logs as logs
 import requests
-
 from utils.ollama_utility import chat, context_chat
 import re
 
@@ -67,14 +66,18 @@ def chatbox():
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        logs.log.info(f"prompt is {prompt}")   
+        # Update prompt to explicitly mention to generate response in LaTeX format for better format. 
+        # This helps in main
+        prompt = f"{prompt} . I would prefer the response in LaTeX format for the math equations "   
+        
+        logs.log.info(f"User input: {prompt}")
                 
         with st.chat_message("assistant"):
             with st.spinner("Processing..."):
                 # Call the FastAPI backend to get the response
                 response = call_fastapi_backend(prompt)
                 # response = context_chat(
-                #     prompt=prompt, query_engine=st.session_state["query_engine"]
+                #      prompt=prompt, query_engine=st.session_state["query_engine"]
                 # )  
         
         if response:            

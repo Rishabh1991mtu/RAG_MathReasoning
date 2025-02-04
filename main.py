@@ -1,7 +1,8 @@
 import time
 
 import streamlit as st
-
+import threading
+import requests
 from components.chatbox import chatbox
 from components.header import set_page_header
 from components.sidebar import sidebar
@@ -9,26 +10,33 @@ from components.sidebar import sidebar
 from components.page_config import set_page_config
 from components.page_state import set_initial_state
 
+from backend.api_endpoint import run_fastapi
 
-def generate_welcome_message(msg):
-    for char in msg:
-        time.sleep(0.025)  # TODO: Find a better way -- This is blocking :(
-        yield char
+def start_frontend_app():
+    
+    ### Setup Initial State
+    set_initial_state()
 
+    ### Page Setup
+    set_page_config()
+    set_page_header()
 
-### Setup Initial State
-set_initial_state()
+    for msg in st.session_state["messages"]:
+        st.chat_message(msg["role"]).write(msg["content"])
+        
+    ### Sidebar
+    sidebar()
 
-### Page Setup
-set_page_config()
-set_page_header()
+    ### Chat Box
+    chatbox()
 
-for msg in st.session_state["messages"]:
-    st.chat_message(msg["role"]).write(msg["content"])
-    # st.chat_message(msg["role"]).write_stream(generate_welcome_message(msg['content']))
+def run():
+    
+    # Start FastAPI in a separate thread
+    run_fastapi()
+    
+    # Start the Streamlit app
+    start_frontend_app()   
 
-### Sidebar
-sidebar()
-
-### Chat Box
-chatbox()
+if __name__ == "__main__":
+    run()
