@@ -6,36 +6,34 @@ import utils.llama_index as llama_index
 
 import re
 
-def render_response(response):
+def format_response_latex(response):
     """
-    Function to render a response containing text and LaTeX expressions in Streamlit.
+    Function to render a response containing both text and LaTeX expressions in Streamlit.
 
     Args:
         response (str): The response string containing text and LaTeX expressions.
     """
-    # Regular expression to extract LaTeX expressions inside square brackets
-    
-    logs.log.info(f"response is {response}")
-    latex_pattern = r"\[([^\]]+)\]"
+    # Log the original response
+    logs.log.info(f"Response: {response}")
 
-    # Find all LaTeX expressions
-    latex_expressions = re.findall(latex_pattern, response)
+    # Regular expression to extract LaTeX expressions inside \[ ... \] blocks
+    latex_pattern = r"(.*?)?(\\\[.*?\\\])"
 
-    # Split response into text and LaTeX parts
-    text_parts = re.split(latex_pattern, response)
-    logs.log.info(f"text_parts is {text_parts}")
+    # Find all text and LaTeX pairs
+    matches = re.findall(latex_pattern, response, re.DOTALL)
 
-    st.title("Auto-Formatted Markdown and LaTeX in Streamlit")
+    for text_part, latex_part in matches:
+        if text_part.strip():
+            st.write(text_part.strip())  # Display normal text
 
-    # Iterate through text and LaTeX expressions
-    for part in text_parts:
-        if part.endswith("\\"):
-            part = part[:-1]  # Remove the trailing backslash
-        if part in latex_expressions:
-            #st.latex(part)  # Render LaTeX expression
-            st.latex(r"[\lim_{x \to 0} \frac{\sin(x)}{x}]")
-        else:
-            st.markdown(part)  # Render text explanation
+        if latex_part.strip():
+            clean_latex = latex_part.replace("\\[", "").replace("\\]", "").strip()
+            st.latex(clean_latex)  # Display LaTeX expression
+
+    # If there is remaining text after the last LaTeX expression, display it
+    remaining_text = re.sub(latex_pattern, "", response, flags=re.DOTALL).strip()
+    if remaining_text:
+        st.write(remaining_text)
 
 def chatbox():
     if prompt := st.chat_input("How can I help?"):
@@ -50,20 +48,15 @@ def chatbox():
             st.markdown(prompt)
 
         logs.log.info(f"prompt is {prompt}")   
-        
-        # Generate llama-index stream with user input
-        with st.chat_message("assistant "):
+                
+        with st.chat_message("assistant"):
             with st.spinner("Processing..."):
-                response = st.write_stream(
-                    # chat(
-                    #     prompt=prompt
-                    # )
-                    context_chat(
-                        prompt=prompt, query_engine=st.session_state["query_engine"]
-                    )
-                )   
+                response = context_chat(
+                    prompt=prompt, query_engine=st.session_state["query_engine"]
+                )  
         
-        render_response(response)
+        # Render response in latex and markdown language .
+        format_response_latex(response)
                 
         # Retrieve the nodes from the query engine based on the user input.       
         retrieved_nodes = st.session_state["query_engine"].retrieve(prompt) 
