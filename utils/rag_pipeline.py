@@ -42,6 +42,8 @@ def rag_pipeline(uploaded_files: list = None):
     # (OPTIONAL) Save Files to Disk #
     #################################
 
+    # This portion of the code saves the user selected documents in a data folder 
+    # SimpleDirectoryReader is used to read the files from the data folder and load them into a list of documents
     if uploaded_files is not None:
         for uploaded_file in uploaded_files:
             with st.spinner(f"Processing {uploaded_file.name}..."):
@@ -54,23 +56,25 @@ def rag_pipeline(uploaded_files: list = None):
     # Create Llama-Index service-context #
     # to use local LLMs and embeddings   #
     ######################################
+    
+    # Initialize the LLM and embedding model :
+    # LLM model being used in chat. 
+    # try:
+    #     llm = ollama_utility.create_ollama_llm(
+    #         st.session_state["selected_model"],
+    #         st.session_state["ollama_endpoint"],
+    #         st.session_state["system_prompt"],
+    #     )
+    #     st.session_state["llm"] = llm
+    #     st.caption("✔️ LLM Initialized")
 
-    try:
-        llm = ollama_utility.create_ollama_llm(
-            st.session_state["selected_model"],
-            st.session_state["ollama_endpoint"],
-            st.session_state["system_prompt"],
-        )
-        st.session_state["llm"] = llm
-        st.caption("✔️ LLM Initialized")
-
-        # resp = llm.complete("Hello!")
-        # print(resp)
-    except Exception as err:
-        logs.log.error(f"Failed to setup LLM: {str(err)}")
-        error = err
-        st.exception(error)
-        st.stop()
+    #     # resp = llm.complete("Hello!")
+    #     # print(resp)
+    # except Exception as err:
+    #     logs.log.error(f"Failed to setup LLM: {str(err)}")
+    #     error = err
+    #     st.exception(error)
+    #     st.stop()
 
     ####################################
     # Determine embedding model to use #
@@ -106,34 +110,48 @@ def rag_pipeline(uploaded_files: list = None):
     # Load files from the data/ directory #
     #######################################
 
-    # if documents already exists in state
-    if (
-        st.session_state["documents"] is not None
-        and len(st.session_state["documents"]) > 0
-    ):
-        logs.log.info("Documents are already available; skipping document loading")
-        st.caption("✔️ Processed File Data")
-    else:
-        try:
-            save_dir = os.getcwd() + "/data"
-            documents = llama_index.load_documents(save_dir)
-            st.session_state["documents"] = documents
-            st.caption("✔️ Data Processed")
-        except Exception as err:
-            logs.log.error(f"Document Load Error: {str(err)}")
-            error = err
-            st.exception(error)
-            st.stop()
+    # # if documents already exists in state
+    # if (
+    #     st.session_state["documents"] is not None
+    #     and len(st.session_state["documents"]) > 0
+    # ):
+    #     logs.log.info("Documents are already available; skipping document loading")
+    #     st.caption("✔️ Processed File Data")
+    # else:
+    try:
+        # Read files from the data directory : 
+        save_dir = os.getcwd() + "/data"
+        # Sending documents to llama_index to for pre-processing (chunking,embeddings) and for creating index
+        documents = llama_index.load_documents(save_dir)           
+        st.session_state["documents"] = documents
+        st.caption("✔️ Data Processed")
+        
+    except Exception as err:
+        
+        logs.log.error(f"Document Load Error: {str(err)}")
+        error = err
+        st.exception(error)
+        st.stop()
 
     ###########################################
     # Create an index from ingested documents #
     ###########################################
 
     try:
-        llama_index.create_query_engine(
+        # Create an index from the documents
+        index = llama_index.create_index(
             st.session_state["documents"],
         )
-        st.caption("✔️ Created File Index")
+         # Save the vector index to disk
+        try:
+            index.storage_context.persist(persist_dir=os.getcwd() + "/vector_db")
+            st.caption("✔️ Created File Index")
+        except Exception as err:
+            logs.log.error(f"Index Creation Error: {str(err)}")
+            error = err
+            st.exception(error)
+            st.stop()
+            
     except Exception as err:
         logs.log.error(f"Index Creation Error: {str(err)}")
         error = err

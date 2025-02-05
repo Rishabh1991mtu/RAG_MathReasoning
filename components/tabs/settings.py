@@ -89,14 +89,14 @@ def settings():
                 "Chunk Size",
                 help="Reducing `chunk_size` improves embedding precision by focusing on smaller text portions. This enhances information retrieval accuracy but escalates computational demands due to processing more chunks.",
                 key="chunk_size",
-                placeholder="50",
+                placeholder="1024",
                 value=st.session_state["chunk_size"],
             )
             st.text_input(
                 "Chunk Overlap",
                 help="The amount of overlap between two consecutive chunks. A higher overlap value helps maintain continuity and context across chunks.",
                 key="chunk_overlap",
-                placeholder="10",
+                placeholder="200",
                 value=st.session_state["chunk_overlap"],
             )
 

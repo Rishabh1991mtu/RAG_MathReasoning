@@ -4,6 +4,10 @@ In the event that an error occurs when using Local RAG, checking out the current
 
 Note: To better understand what is happening under the hood and aid in troubleshooting, checkout the [Pipeline documentation](pipeline.md) as well.
 
+# ollama model retrieval issue : 
+
+Make sure you are in correct ollama version. The app was tested on ollama version 0.5.7 (Use ollama --version to check)
+
 ## Application State
 
 Each stage of the RAG pipeline stores its data in the application state. 

@@ -1,34 +1,31 @@
-# 📚 Local RAG
+# Math RAG implementation :
 
-![local-rag-demo](demo.gif)
+This application is specifically fine-tuned to handle math-related questions. Users can ask math-related questions from the documents, and the bot is designed to understand and process math expressions, providing accurate answers.
 
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8588/badge)](https://www.bestpractices.dev/projects/8588)
-![GitHub Commit Activity](https://img.shields.io/github/commit-activity/t/jonfairbanks/local-rag)
-![GitHub Last Commit](https://img.shields.io/github/last-commit/jonfairbanks/local-rag)
-![GitHub License](https://img.shields.io/github/license/jonfairbanks/local-rag)
+![Math RAG Bot](docs/math_rag_bot.png)
 
-Offline, Open-Source RAG
+### Key Features
 
-Ingest files for retrieval augmented generation (RAG) with open-source Large Language Models (LLMs), all without 3rd parties or sensitive data leaving your network.
+- **Math Expression Understanding**: The bot is fine-tuned to understand and interpret complex math expressions.
+- **Vector index**: Documents loaded will be processed as text and embeddings save in vectorindex stored in folder vector_db
+- **Document-Based Question Answering**: Users can ask questions based on the content of the ingested documents.
+- **Math Solutions**: The bot provides provides solutions to math problems, leveraging its understanding of mathematical concepts in a step by step manner.
+- **Ground Truth**: The app also shares the document names and vector similarity score with the retrieved chunks. 
+- **Latex based formattting**: The LLM is instructed to generate resppnse in LateX notation which is rendered in UI.  
 
-Features:
+## Usage
 
-- Offline Embeddings & LLMs Support (No OpenAI!)
-- Support for Multiple Sources
-    - Local Files
-    - GitHub Repos
-    - Websites
-- Streaming Responses
-- Conversational Memory
-- Chat Export
+1. **Ingest Documents**: Upload your math-related documents to the application.
+2. **Ask Questions**: Use the chat interface to ask math-related questions.
+3. **Get Answers**: Receive accurate answers with properly formatted math expressions.
 
-Learn More:
+Setup and usage instructions : 
 
 - [Setup & Deploy the App](docs/setup.md)
 - [Using Local RAG](docs/usage.md)
 - [RAG Pipeline](docs/pipeline.md)
-- [Planned Features](docs/todo.md)
+- [API Endoints](docs/apiendpoint.md)
+
+Troubleshooting : 
 - [Troubleshooting](docs/troubleshooting.md)
-- [Known Bugs & Issues](docs/todo.md#known-issues--bugs)
-- [Resources](docs/resources.md)
-- [Contributing](docs/contributing.md)
+- [Documents](docs/resources.md)

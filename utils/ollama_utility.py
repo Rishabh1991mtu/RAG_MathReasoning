@@ -18,7 +18,6 @@ from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryE
 #
 ###################################
 
-
 def create_client(host: str):
     """
     Creates a client for interacting with the Ollama API.
@@ -112,8 +111,8 @@ def create_ollama_llm(model: str, base_url: str, system_prompt: str = None, requ
         - llm: An instance of the Ollama language model with the specified configuration.
     """
     try:
-        # Settings.llm = Ollama(model=model, base_url=base_url, system_prompt=system_prompt, request_timeout=request_timeout)
-        Settings.llm = Ollama(model=model, base_url=base_url, request_timeout=request_timeout)
+        Settings.llm = Ollama(model=model, base_url=base_url, system_prompt=system_prompt, request_timeout=request_timeout)
+        #Settings.llm = Ollama(model=model, base_url=base_url, request_timeout=request_timeout)
         logs.log.info("Ollama LLM instance created successfully")
         return Settings.llm
     except Exception as e:
@@ -187,10 +186,18 @@ def context_chat(prompt: str, query_engine: RetrieverQueryEngine):
     """
 
     try:
-        stream = query_engine.query(prompt)
+        # Return chat as a single string : 
+        stream = new_func(prompt, query_engine)
+        merge_response = []
         for text in stream.response_gen:
-            # print(str(text), end="", flush=True)
-            yield str(text)
+            merge_response.append(str(text))
+        answer = ''.join(merge_response)
+        logs.log.info(f"Answer is {answer}")
+        return answer
+    
     except Exception as err:
         logs.log.error(f"Ollama chat stream error: {err}")
         return
+
+def new_func(prompt, query_engine):
+    return query_engine.query(prompt)
