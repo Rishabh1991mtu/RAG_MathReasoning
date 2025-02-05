@@ -110,26 +110,28 @@ def rag_pipeline(uploaded_files: list = None):
     # Load files from the data/ directory #
     #######################################
 
-    # if documents already exists in state
-    if (
-        st.session_state["documents"] is not None
-        and len(st.session_state["documents"]) > 0
-    ):
-        logs.log.info("Documents are already available; skipping document loading")
-        st.caption("✔️ Processed File Data")
-    else:
-        try:
-            # Read files from the data directory : 
-            save_dir = os.getcwd() + "/data"
-            # Sending documents to llama_index to for pre-processing (chunking,embeddings) and for creating index
-            documents = llama_index.load_documents(save_dir)           
-            st.session_state["documents"] = documents
-            st.caption("✔️ Data Processed")
-        except Exception as err:
-            logs.log.error(f"Document Load Error: {str(err)}")
-            error = err
-            st.exception(error)
-            st.stop()
+    # # if documents already exists in state
+    # if (
+    #     st.session_state["documents"] is not None
+    #     and len(st.session_state["documents"]) > 0
+    # ):
+    #     logs.log.info("Documents are already available; skipping document loading")
+    #     st.caption("✔️ Processed File Data")
+    # else:
+    try:
+        # Read files from the data directory : 
+        save_dir = os.getcwd() + "/data"
+        # Sending documents to llama_index to for pre-processing (chunking,embeddings) and for creating index
+        documents = llama_index.load_documents(save_dir)           
+        st.session_state["documents"] = documents
+        st.caption("✔️ Data Processed")
+        
+    except Exception as err:
+        
+        logs.log.error(f"Document Load Error: {str(err)}")
+        error = err
+        st.exception(error)
+        st.stop()
 
     ###########################################
     # Create an index from ingested documents #

@@ -120,7 +120,11 @@ def load_documents(data_dir: str):
 
 @st.cache_resource(show_spinner=False)
 def create_index(_documents):
+    
+    logs.log.info(f"Document list is {_documents[0]}")
+    
     """
+    
     Creates an index from the provided documents and service context.
     Splits documents based on chuck size and overlap set by the user.
     
