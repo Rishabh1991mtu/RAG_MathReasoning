@@ -24,8 +24,8 @@ Setup and usage instructions :
 - [Setup & Deploy the App](docs/setup.md)
 - [Using Local RAG](docs/usage.md)
 - [RAG Pipeline](docs/pipeline.md)
-- [API Endoints](docs/endpoint.md)
+- [API Endoints](docs/apiendpoint.md)
 
 Troubleshooting : 
 - [Troubleshooting](docs/troubleshooting.md)
-- [Documents](docs/troubleshooting.md)
+- [Documents](docs/resources.md)
