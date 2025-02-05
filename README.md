@@ -2,7 +2,7 @@
 
 This application is specifically fine-tuned to handle math-related questions. Users can ask math-related questions from the documents, and the bot is designed to understand and process math expressions, providing accurate answers.
 
-![Math RAG Bot](docs/images/math_rag_bot.png)
+![Math RAG Bot](docs/math_rag_bot.png)
 
 ### Key Features
 
