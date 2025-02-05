@@ -131,7 +131,7 @@ def chatbox():
             #     st.markdown(citations, unsafe_allow_html=True)
 
             # Add the final response to messages state
-            st.session_state["messages"].append({"role": "assistant", "content": response})
+            st.session_state["messages"].append({"role": "assistant", "content": chatbot_response})
 
         
 
