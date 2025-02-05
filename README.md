@@ -2,9 +2,12 @@
 
 This application is specifically fine-tuned to handle math-related questions. Users can ask math-related questions from the documents, and the bot is designed to understand and process math expressions, providing accurate answers.
 
+![Math RAG Bot](docs/images/math_rag_bot.png)
+
 ### Key Features
 
 - **Math Expression Understanding**: The bot is fine-tuned to understand and interpret complex math expressions.
+- **Vector index**: Documents loaded will be processed as text and embeddings save in vectorindex stored in folder vector_db
 - **Document-Based Question Answering**: Users can ask questions based on the content of the ingested documents.
 - **Math Solutions**: The bot provides provides solutions to math problems, leveraging its understanding of mathematical concepts in a step by step manner.
 - **Ground Truth**: The app also shares the document names and vector similarity score with the retrieved chunks. 
@@ -21,7 +24,8 @@ Setup and usage instructions :
 - [Setup & Deploy the App](docs/setup.md)
 - [Using Local RAG](docs/usage.md)
 - [RAG Pipeline](docs/pipeline.md)
+- [API Endoints](docs/endpoint.md)
 
 Troubleshooting : 
-- [RAG Pipeline](docs/troubleshooting.md)
-- [RAG Pipeline](docs/troubleshooting.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Documents](docs/troubleshooting.md)
