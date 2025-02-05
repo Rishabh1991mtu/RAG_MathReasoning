@@ -55,6 +55,9 @@ def setup_embedding_model(
 
     # Settting to use HuggingFaceEmbedding model set by the user.
     # It is being used in the query engine
+    
+    logs.log.info(f"Setting up embedding model: {model}")
+    
     try:
         Settings.embed_model = HuggingFaceEmbedding(
             model_name=model,

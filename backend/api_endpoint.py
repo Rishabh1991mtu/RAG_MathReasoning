@@ -50,12 +50,14 @@ async def query_llamaindex(request: QueryRequest):
     logs.log.info(f"Top K parameter: {request.top_k_param}")
     logs.log.info(f"Ollama model: {request.ollama_model}")
     logs.log.info(f"Ollama endpoint: {request.ollama_endpoint}")
-    logs.log.info(f"Settings.llm: {Settings.llm}")
-    logs.log.info(f"Embedding model: {Settings.embed_model}")
+    logs.log.info(f"System prompt: {request.system_prompt}")
+    logs.log.info(f"Embedding model: {request.embedding_model}")
+    
+    # Add checks for each request parameter .
     
     # Load the LLM model : 
     try:
-        Settings.llm = create_ollama_llm(request.ollama_model,
+        Settings.llm = create_ollama_llm(request.ollama_model.strip(),
                                          request.ollama_endpoint,
                                          request.system_prompt)
         
@@ -68,7 +70,7 @@ async def query_llamaindex(request: QueryRequest):
     
     # Load embedding model :    
     embedding_model = request.embedding_model
-    hf_embedding_model = None
+    hf_embedding_model = embedding_model
 
     if embedding_model == None:
         hf_embedding_model = "BAAI/bge-large-en-v1.5"
