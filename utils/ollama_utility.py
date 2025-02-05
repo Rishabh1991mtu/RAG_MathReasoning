@@ -191,7 +191,10 @@ def context_chat(prompt: str, query_engine: RetrieverQueryEngine):
         merge_response = []
         for text in stream.response_gen:
             merge_response.append(str(text))
-        return ''.join(merge_response)
+        answer = ''.join(merge_response)
+        logs.log.info(f"Answer is {answer}")
+        return answer
+    
     except Exception as err:
         logs.log.error(f"Ollama chat stream error: {err}")
         return

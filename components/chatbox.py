@@ -36,12 +36,19 @@ def format_response_latex(response):
     if remaining_text:
         st.write(remaining_text)
 
-def call_fastapi_backend(user_input,top_k,ollama_model):
+def call_fastapi_backend(user_input,top_k,ollama_model,ollama_endpoint,system_prompt, embedding_model):
     """
     Calls the FastAPI backend with the user query and returns the response.
     """
     try:
-        response = requests.post(API_URL, json={"prompt": user_input, "top_k_param": top_k, "ollama_model":ollama_model})
+        response = requests.post(API_URL, json={"prompt": user_input,
+                                                "top_k_param": top_k,
+                                                "ollama_model":ollama_model,
+                                                "ollama_endpoint":ollama_endpoint,
+                                                "system_prompt":system_prompt,
+                                                "embedding_model":embedding_model})
+                                            
+        
         response.raise_for_status()  # Raise error for non-200 responses
         return response
     
@@ -57,10 +64,6 @@ def chatbox():
         None
     """
     if prompt := st.chat_input("How can I help?"):
-        # Prevent submission if Ollama endpoint is not set
-        # if not st.session_state["query_engine"]:
-        #     st.warning("Please confirm settings and upload files before proceeding.")
-        #     st.stop()
 
         # Add the user input to messages state
         st.session_state["messages"].append({"role": "user", "content": prompt})
@@ -72,24 +75,29 @@ def chatbox():
         prompt = f"{prompt} . I would prefer the response in LaTeX format for the math equations "   
         top_k = st.session_state["top_k"] # Retrieve top k value from session state
         ollama_model = st.session_state["selected_model"]
-        logs.log.info(f"Top K value is {top_k}")
-        logs.log.info(f"User input: {prompt}")
+        ollama_endpoint = st.session_state["ollama_endpoint"]
+        system_prompt = st.session_state["system_prompt"]   
+        embedding_model = st.session_state["embedding_model"]   
         
         with st.chat_message("assistant"):
             with st.spinner("Processing..."):
                 # Call the FastAPI backend to get the response with user prompt and top k values.
-                response = call_fastapi_backend(prompt,top_k,ollama_model)
+                response = call_fastapi_backend(prompt, top_k, ollama_model, ollama_endpoint, system_prompt, embedding_model)
                 # response = context_chat(
                 #      prompt=prompt, query_engine=st.session_state["query_engine"]
                 # )  
         
-        if response:            
-            
+        logs.log.info(f"Response from FastAPI backend is {response}")
+        
+        if response:
+            response_json = response.json()
+            chatbot_response = response_json.get("response", "")
+            retrieved_nodes = response_json.get("nodes", [])
+
             # Render response in latex and markdown language .
-            format_response_latex(response)
+            format_response_latex(chatbot_response)
                     
             # Retrieve the nodes from the query engine based on the user input.       
-            retrieved_nodes = st.session_state["query_engine"].retrieve(prompt) 
             logs.log.info(f"retrieved_nodes total is {len(retrieved_nodes)}")
             
             # Extract filename and scores from retrieved chunks and create a dictionary for unique file names

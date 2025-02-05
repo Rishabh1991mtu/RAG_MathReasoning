@@ -4,7 +4,6 @@ import utils.logs as logs
 
 from utils.ollama_utility import get_models
 
-
 def set_initial_state():
 
     ###########

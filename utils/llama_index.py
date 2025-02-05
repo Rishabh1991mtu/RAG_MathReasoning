@@ -9,7 +9,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.node_parser import SentenceSplitter
 
 # This is not used but required by llama-index and must be set FIRST
-os.environ["OPENAI_API_KEY"] = "sk-abc123"
+# os.environ["OPENAI_API_KEY"] = "sk-abc123"
 
 
 from llama_index.core import (
@@ -17,7 +17,6 @@ from llama_index.core import (
     SimpleDirectoryReader,
     Settings,
 )
-
 
 
 ###################################
@@ -63,6 +62,7 @@ def setup_embedding_model(
         )
         logs.log.info(f"Embedding model created successfully")        
         logs.log.info(f"Embedding model is {Settings.embed_model}")
+        return Settings.embed_model
     except Exception as err:
         print(f"Failed to setup the embedding model: {err}")
 
@@ -95,7 +95,6 @@ def load_documents(data_dir: str):
         files = SimpleDirectoryReader(input_dir=data_dir, recursive=True)
         documents = files.load_data(files)        
         logs.log.info(f"Loaded {len(documents):,} documents from files")
-        logs.log.info(f"Document list is {documents}")
         return documents
     except Exception as err:
         logs.log.error(f"Error creating data index: {err}")

@@ -59,22 +59,22 @@ def rag_pipeline(uploaded_files: list = None):
     
     # Initialize the LLM and embedding model :
     # LLM model being used in chat. 
-    try:
-        llm = ollama_utility.create_ollama_llm(
-            st.session_state["selected_model"],
-            st.session_state["ollama_endpoint"],
-            st.session_state["system_prompt"],
-        )
-        st.session_state["llm"] = llm
-        st.caption("✔️ LLM Initialized")
+    # try:
+    #     llm = ollama_utility.create_ollama_llm(
+    #         st.session_state["selected_model"],
+    #         st.session_state["ollama_endpoint"],
+    #         st.session_state["system_prompt"],
+    #     )
+    #     st.session_state["llm"] = llm
+    #     st.caption("✔️ LLM Initialized")
 
-        # resp = llm.complete("Hello!")
-        # print(resp)
-    except Exception as err:
-        logs.log.error(f"Failed to setup LLM: {str(err)}")
-        error = err
-        st.exception(error)
-        st.stop()
+    #     # resp = llm.complete("Hello!")
+    #     # print(resp)
+    # except Exception as err:
+    #     logs.log.error(f"Failed to setup LLM: {str(err)}")
+    #     error = err
+    #     st.exception(error)
+    #     st.stop()
 
     ####################################
     # Determine embedding model to use #
