@@ -22,6 +22,7 @@ All options within the RAG pipeline are exposed to users after toggling `Setting
 
 ### Embeddings
 
+
 | Setting           | Description                                                             | Default               |
 |-------------------|-------------------------------------------------------------------------|-----------------------|
 | Embedding Model   | Embedding model to be used for vectorize your files                     | bge-large-en-v1.5     |

@@ -6,7 +6,9 @@ This application is specifically fine-tuned to handle math-related questions. Us
 
 - **Math Expression Understanding**: The bot is fine-tuned to understand and interpret complex math expressions.
 - **Document-Based Question Answering**: Users can ask questions based on the content of the ingested documents.
-- **Accurate Math Solutions**: The bot provides accurate solutions to math problems, leveraging its understanding of mathematical concepts.
+- **Math Solutions**: The bot provides provides solutions to math problems, leveraging its understanding of mathematical concepts in a step by step manner.
+- **Ground Truth**: The app also shares the document names and vector similarity score with the retrieved chunks. 
+- **Latex based formattting**: The LLM is instructed to generate resppnse in LateX notation which is rendered in UI.  
 
 ## Usage
 
@@ -14,13 +16,12 @@ This application is specifically fine-tuned to handle math-related questions. Us
 2. **Ask Questions**: Use the chat interface to ask math-related questions.
 3. **Get Answers**: Receive accurate answers with properly formatted math expressions.
 
-Learn More:
+Setup and usage instructions : 
 
 - [Setup & Deploy the App](docs/setup.md)
 - [Using Local RAG](docs/usage.md)
 - [RAG Pipeline](docs/pipeline.md)
-- [Planned Features](docs/todo.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [Known Bugs & Issues](docs/todo.md#known-issues--bugs)
-- [Resources](docs/resources.md)
-- [Contributing](docs/contributing.md)
+
+Troubleshooting : 
+- [RAG Pipeline](docs/troubleshooting.md)
+- [RAG Pipeline](docs/troubleshooting.md)
