@@ -136,11 +136,20 @@ def rag_pipeline(uploaded_files: list = None):
     ###########################################
 
     try:
-        # Create a query engine from the search index.
-        llama_index.create_query_engine(
+        # Create an index from the documents
+        index = llama_index.create_index(
             st.session_state["documents"],
         )
-        st.caption("✔️ Created File Index")
+         # Save the vector index to disk
+        try:
+            index.storage_context.persist(persist_dir=os.getcwd() + "/vector_db")
+            st.caption("✔️ Created File Index")
+        except Exception as err:
+            logs.log.error(f"Index Creation Error: {str(err)}")
+            error = err
+            st.exception(error)
+            st.stop()
+            
     except Exception as err:
         logs.log.error(f"Index Creation Error: {str(err)}")
         error = err

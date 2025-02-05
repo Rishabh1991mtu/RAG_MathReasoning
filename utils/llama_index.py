@@ -184,8 +184,9 @@ def create_query_engine(_documents):
     logs.log.info(f"Total documents {len(_documents)}")
     
     try:
-        #  Vector index generated from set of documents : 
+        # Vector index generated from set of documents : 
         index = create_index(_documents)
+        # Save the vector index to disk
         
         query_engine = index.as_query_engine(
             similarity_top_k=st.session_state["top_k"],

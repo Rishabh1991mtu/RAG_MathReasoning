@@ -10,8 +10,6 @@ from components.sidebar import sidebar
 from components.page_config import set_page_config
 from components.page_state import set_initial_state
 
-from backend.api_endpoint import run_fastapi
-
 def start_frontend_app():
     
     ### Setup Initial State
@@ -32,8 +30,8 @@ def start_frontend_app():
 
 def run():
     
-    # Start FastAPI in a separate thread
-    run_fastapi()
+    # Start the Fast API for backend
+    #run_fastapi()
     
     # Start the Streamlit app
     start_frontend_app()   
