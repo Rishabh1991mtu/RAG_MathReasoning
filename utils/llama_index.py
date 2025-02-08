@@ -185,10 +185,7 @@ def create_query_engine(_documents):
 
         This function uses the `create_index` function to create an index from the provided documents and service context, and then creates a query engine from the resulting index. The `query_engine` parameter is used to specify the parameters of the query engine, including the number of top-ranked items to return (`similarity_top_k`) and the response mode (`response_mode`).
     """
-    
-    logs.log.info(f"Document list is {_documents[0]}")
-    logs.log.info(f"Total documents {len(_documents)}")
-    
+        
     try:
         # Vector index generated from set of documents : 
         index = create_index(_documents)

@@ -1,15 +1,44 @@
 import os
-import sys
 import shutil
-import inspect
+import json
 
 import streamlit as st
 
 import utils.helpers as func
-import utils.ollama_utility as ollama_utility
 import utils.llama_index as llama_index
 import utils.logs as logs
 
+def save_user_settings():
+    '''
+    Function to save user settings to a config file.
+    '''
+    config_path = os.path.join(os.getcwd(), "config", "config.json")
+    
+    # Load existing settings if the config file exists
+    if os.path.exists(config_path):
+        with open(config_path, "r") as config_file:
+            try:
+                user_settings = json.load(config_file)
+            except json.JSONDecodeError:
+                user_settings = {}
+    else:
+        user_settings = {}
+    
+    # Update settings with current session state
+    user_settings.update({
+        "ollama_endpoint": st.session_state.get("ollama_endpoint"),
+        "embedding_model": st.session_state.get("embedding_model"),
+        "ollama_model": st.session_state.get("selected_model"),
+        "system_prompt": st.session_state.get("system_prompt"),
+    })
+    
+    try:
+        with open(config_path, "w") as config_file:
+            json.dump(user_settings, config_file, indent=4)
+    except Exception as e:
+        logs.log.error(f"Error saving user settings: {str(e)}")
+        st.exception(e)
+        st.stop()
 
 def rag_pipeline(uploaded_files: list = None):
     """
@@ -81,23 +110,23 @@ def rag_pipeline(uploaded_files: list = None):
     ####################################
 
     embedding_model = st.session_state["embedding_model"]
-    hf_embedding_model = None
+    # hf_embedding_model = None
 
-    if embedding_model == None:
-        hf_embedding_model = "BAAI/bge-large-en-v1.5"
+    # if embedding_model == None:
+    #     hf_embedding_model = "BAAI/bge-large-en-v1.5"
 
-    if embedding_model == "Default (bge-large-en-v1.5)":
-        hf_embedding_model = "BAAI/bge-large-en-v1.5"
+    # if embedding_model == "Default (bge-large-en-v1.5)":
+    #     hf_embedding_model = "BAAI/bge-large-en-v1.5"
 
-    if embedding_model == "Large (Salesforce/SFR-Embedding-Mistral)":
-        hf_embedding_model = "Salesforce/SFR-Embedding-Mistral"
+    # if embedding_model == "Large (Salesforce/SFR-Embedding-Mistral)":
+    #     hf_embedding_model = "Salesforce/SFR-Embedding-Mistral"
 
-    if embedding_model == "Other":
-        hf_embedding_model = st.session_state["other_embedding_model"]
+    # if embedding_model == "Other":
+    #     hf_embedding_model = st.session_state["other_embedding_model"]
 
     try:
         llama_index.setup_embedding_model(
-            hf_embedding_model,
+            embedding_model,
         )
         st.caption("✔️ Embedding Model Created")
     except Exception as err:
@@ -139,6 +168,7 @@ def rag_pipeline(uploaded_files: list = None):
 
     try:
         # Create an index from the documents
+        logs.log.info(f"Session state : {st.session_state['documents']}")
         index = llama_index.create_index(
             st.session_state["documents"],
         )
@@ -172,5 +202,7 @@ def rag_pipeline(uploaded_files: list = None):
                 f"Unable to delete data files, you may want to clean-up manually: {str(err)}"
             )
             pass
-
+        
+    # Save user settings to a config file
+    save_user_settings()            
     return error  # If no errors occurred, None is returned

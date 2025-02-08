@@ -69,8 +69,8 @@ def settings():
         embedding_model = st.selectbox(
             "Model",
             [
-                "Default (bge-large-en-v1.5)",
-                "Large (Salesforce/SFR-Embedding-Mistral)",
+                "BAAI/bge-large-en-v1.5",
+                "Salesforce/SFR-Embedding-Mistral",
                 "Other",
             ],
             key="embedding_model",

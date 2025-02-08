@@ -17,7 +17,7 @@ def set_initial_state():
         st.session_state["ollama_endpoint"] = "http://localhost:11434"
 
     if "embedding_model" not in st.session_state:
-        st.session_state["embedding_model"] = "Default (bge-large-en-v1.5)"
+        st.session_state["embedding_model"] = "BAAI/bge-large-en-v1.5"
 
     if "ollama_models" not in st.session_state:
         try:
