@@ -16,8 +16,9 @@
 
 ### Frontend : Example Curl Command
 
-To send a math query to the FastAPI endpoint, you can use the following curl command:
+To send a math query to the FastAPI endpoint, you can use the following curl command and in shell terminal:
 
+Option 1 : Run directly in terminal : 
 ```sh
 curl -X POST "http://127.0.0.1:8000/api/math-query" -H "Content-Type: application/json" -d '{
     "prompt": "What is the integral of x^2?",
@@ -25,4 +26,6 @@ curl -X POST "http://127.0.0.1:8000/api/math-query" -H "Content-Type: applicatio
 }
 ```
 
-You can also use : http://127.0.0.1:8000/docs to send math queries formatted in natural language or Latex notations to backend to recieve a response.
+Options 2: Open PowerShell cd to to ./services and run ./math_query.ps1 for windows .  
+
+For testing : You can also use : http://127.0.0.1:8000/docs to test the API endpoint . 

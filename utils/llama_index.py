@@ -152,12 +152,21 @@ def create_index(_documents):
         )
 
         logs.log.info("Index created from loaded documents successfully")
-
         return index
+    
     except Exception as err:
-        logs.log.error(f"Index creation failed: {err}")
-        raise Exception(f"Index creation failed: {err}")
-
+        logs.log.error(f"Index creation failed with user defined chunk size and chunk overlap: {err}")
+        
+        try : 
+            index = VectorStoreIndex.from_documents(
+            documents=_documents, show_progress=True,
+            )
+            logs.log.info("Index created from loaded documents successfully")
+            return index 
+    
+        except Exception as err:
+            logs.log.error(f"Index creation failed with default chunk size and chunk overlap: {err}")
+            raise Exception(f"Index creation failed with default chunk size and chunk overlap: {err}")
 
 ###################################
 #

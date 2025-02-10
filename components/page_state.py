@@ -89,6 +89,9 @@ def set_initial_state():
     if "advanced" not in st.session_state:
         st.session_state["advanced"] = False
 
+    # RAG Math Enhacement 1 : Applied chain of thought prompts and few shot propmts to improve the response quality.
+    # Specifically mentioned to return response provide the response in LaTeX format.
+            
     if "system_prompt" not in st.session_state:
         st.session_state["system_prompt"] = (
             '''

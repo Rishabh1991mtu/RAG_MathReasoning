@@ -13,6 +13,10 @@ import utils.llama_index as llama_index
 
 app = FastAPI()
 # Allow CORS for local testing
+
+# Initialize app state variables
+app.state.query_engine_RAG = None # Query engine for RAG
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allow all origins for testing
@@ -20,8 +24,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-query_engine_RAG = None
 
 class QueryRequest(BaseModel):
     
@@ -148,36 +150,33 @@ def initial_setup(top_k_param):
     setup_embedding_model(config.get("embedding_model"))
     
     # Load the index from the storage context and create a query engine
-    query_engine_RAG = load_index(top_k_param)
-    # Inital setup is successful 
-    initial_setup_flag = True
-    return query_engine_RAG
+    app.state.query_engine_RAG = load_index(top_k_param)
     
 @app.post("/api/math-query")
 async def query_llamaindex(request: QueryRequest):
-    
-    global query_engine_RAG
     
     logs.log.info(f"Received query request: {request.prompt}")
     logs.log.info(f"Top K parameter: {request.top_k_param}")
     
     # Initial setup for creating a query engine if there is no query running instance available . 
-    if query_engine_RAG is None: 
+    if app.state.query_engine_RAG is None:
+        
         logs.log.info("Query engine is not available for processing the query. Setting up the query engine...")
-        query_engine_RAG = initial_setup(request.top_k_param)
+        initial_setup(request.top_k_param)
         logs.log.info("Query engine is available for processing the query")
+        
     else : 
         logs.log.info("Query engine is available for processing the query")
     # Send the query to the query engine and retrieve the response
     
     try:
-        chatbot_response = query_engine_RAG.query(request.prompt)
+        chatbot_response = app.state.query_engine_RAG.query(request.prompt)
         if chatbot_response is None:
             logs.log.error(f"Error processing query: {request.prompt}")
             raise HTTPException(status_code=500, detail="Error processing query")
         
         else:
-            doc_nodes = query_engine_RAG.retrieve(request.prompt) 
+            doc_nodes = app.state.query_engine_RAG.retrieve(request.prompt) 
             logs.log.info(f"Response from query engine: {chatbot_response.response}")
             if hasattr(chatbot_response, 'response') and len(doc_nodes) > 0:
                 return {"response": chatbot_response.response, "nodes": doc_nodes}

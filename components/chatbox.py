@@ -5,6 +5,8 @@ import re
 import json
 import os
 
+# RAG Math Enhacement 3 : Function to format response in latex and markdown language.
+
 def format_response_latex(response):
     """
     Function to extract text and latex expressions from a response and render them in Streamlit.
@@ -26,7 +28,7 @@ def format_response_latex(response):
             st.write(text_part.strip())  # Display normal text
 
         if latex_part.strip():
-            clean_latex = latex_part.replace("\\[", "").replace("\\]", "").strip()
+            clean_latex = latex_part.replace("\\[", "").replace("\\]", "").strip() # Formatting required to render latex in streamlit
             st.latex(clean_latex)  # Display LaTeX expression
 
     # If there is remaining text after the last LaTeX expression, display it
@@ -46,7 +48,7 @@ def call_fastapi_backend(user_input,top_k):
         with open(config_path) as config_file:
             config = json.load(config_file)
             # Extract FastAPI endpoint from config file ,Default is http://127.0.0.1:8000 
-            API_endpoint = config.get("FastAPI_endpoint", "http://127.0.0.1:8000/")
+            API_endpoint = config.get("FastAPI_endpoint", "http://127.0.0.1:8000/api/math-query")
             
     except Exception as e:
         st.error(f"Error reading config file: {e}")
@@ -116,7 +118,7 @@ def chatbox():
 
                 retrieval_scores.append(score)
             
-            # Check if any score is greater than 0.55 and display citations.
+            # RAG Math Enhacement 2 : Add a similarity score threshold to caition the user if the answer is not available in the context retrieved.
             
             similarity_score_threshold  = 0.55 # This threshold can be adjusted based on the requirement. Currently set to 0.55 based on testing . 
             if any(score > similarity_score_threshold for score in retrieval_scores):                
@@ -141,9 +143,8 @@ def chatbox():
                 st.markdown(citations, unsafe_allow_html=True)
 
             else:
-                st.write(f"Caution: Please verify the information provided by the chatbot.  "
-                         f"The accuracy of responses may vary as specific information to answer the question may not be available in the retrieved documents. "
-                         "Double-check the answer generated.")
+                st.write(f"Caution : The answer to the question is not available in the context retrieved. AI Math Assistant is using its own knowledge to generate the response . Please verify the response.")
+                # Allow LLM to generate the response in case the answer is not available in the context retrieved.
                 format_response_latex(chatbot_response)
                 
             # Add the final response to messages state
