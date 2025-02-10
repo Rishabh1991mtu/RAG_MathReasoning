@@ -73,6 +73,7 @@ def get_models():
         data = chat_client.list()
         models = []
         for model in data["models"]:
+            # Fixed issue in retrieving Ollama modes : Updated model["name"] to model["model"]
             models.append(model["model"])
 
         st.session_state["ollama_models"] = models
@@ -111,7 +112,12 @@ def create_ollama_llm(model: str, base_url: str, system_prompt: str = None, requ
         - llm: An instance of the Ollama language model with the specified configuration.
     """
     try:
-        Settings.llm = Ollama(model=model, base_url=base_url, system_prompt=system_prompt, request_timeout=request_timeout)
+        Settings.llm = Ollama(model=model,
+                              base_url=base_url,
+                              system_prompt=system_prompt,
+                              request_timeout=request_timeout,
+                              model_kwargs={"max_tokens": 1000, "temperature": 0, "top_p": 0.7, "top_k": 10})
+        
         #Settings.llm = Ollama(model=model, base_url=base_url, request_timeout=request_timeout)
         logs.log.info("Ollama LLM instance created successfully")
         return Settings.llm

@@ -80,10 +80,6 @@ def chatbox():
             st.markdown(prompt) 
         
         top_k = st.session_state["top_k"] # Retrieve top k value from session state
-        ollama_model = st.session_state["selected_model"] 
-        ollama_endpoint = st.session_state["ollama_endpoint"]
-        system_prompt = st.session_state["system_prompt"]   
-        embedding_model = st.session_state["embedding_model"]   
         
         with st.chat_message("assistant"):
             with st.spinner("Processing..."):
@@ -100,15 +96,13 @@ def chatbox():
             response_json = response.json()
             chatbot_response = response_json.get("response", "")
             retrieved_nodes = response_json.get("nodes")
-
-            # Render response in latex and markdown language .
-            format_response_latex(chatbot_response)
                     
             # Retrieve the nodes from the query engine based on the user input.       
             logs.log.info(f"retrieved_nodes total is {len(retrieved_nodes)}")
             
             # Extract filename and scores from retrieved chunks and create a dictionary for unique file names
             file_scores_dict = {}
+            retrieval_scores = [] # List to store similarity scores of all chunks
             for node in retrieved_nodes:
                 file_name = node.get("node", {}).get("extra_info", {}).get("file_name", "N/A")
                 logs.log.info(f"File name is {file_name}")
@@ -119,25 +113,38 @@ def chatbox():
                     file_scores_dict[file_name].append(score)
                 else: 
                     file_scores_dict[file_name].append(score)
+
+                retrieval_scores.append(score)
             
-            citations = "<br>Citations:<br>"       
+            # Check if any score is greater than 0.55 and display citations.
+            
+            similarity_score_threshold  = 0.55 # This threshold can be adjusted based on the requirement. Currently set to 0.55 based on testing . 
+            if any(score > similarity_score_threshold for score in retrieval_scores):                
+                
+                # Render response in latex and markdown language .
+                format_response_latex(chatbot_response)
+                citations = "<br>Citations:<br>"     
+            
+                # Display document from which data is retrieved along with scores
+                chunk_index = 1
+                file_index = 1
+                for file_name, scores in file_scores_dict.items():
+                    citations += f"<h6>{file_index}. Filename: {file_name}<h6><br>"
+                    citations += "<table><tr><th>Chunk</th><th>Similarity Score</th></tr>"
+                    file_index += 1
+                    for score in scores:
+                        citations += f"<tr><td>{chunk_index}</td><td>{score}</td></tr>"
+                        chunk_index += 1
+                    citations += "</table><br>"
 
-            # Display document from which data is retrieved along with scores
-            chunk_index = 1
-            file_index = 1
-            for file_name, scores in file_scores_dict.items():
-                citations += f"<h6>{file_index}. Filename: {file_name}<h6><br>"
-                citations += "<table><tr><th>Chunk</th><th>Similarity Score</th></tr>"
-                file_index += 1
-                for score in scores:
-                    citations += f"<tr><td>{chunk_index}</td><td>{score}</td></tr>"
-                    chunk_index += 1
-                citations += "</table><br>"
-
-            # Send Citations to chat.
-            with st.chat_message("assistant"):
+                # Send Citations to chat.
                 st.markdown(citations, unsafe_allow_html=True)
 
+            else:
+                st.write(f"Caution: Please verify the information provided by the chatbot.  "
+                         f"The accuracy of responses may vary as specific information to answer the question may not be available in the retrieved documents. "
+                         "Double-check the answer generated.")
+                format_response_latex(chatbot_response)
+                
             # Add the final response to messages state
             st.session_state["messages"].append({"role": "assistant", "content": chatbot_response})
-        

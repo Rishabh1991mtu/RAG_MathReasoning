@@ -22,11 +22,7 @@ To send a math query to the FastAPI endpoint, you can use the following curl com
 curl -X POST "http://127.0.0.1:8000/api/math-query" -H "Content-Type: application/json" -d '{
     "prompt": "What is the integral of x^2?",
     "top_k_param": 3,
-    "ollama_model": "llama3:8b",
-    "ollama_endpoint": "http://localhost:11434/",
-    "system_prompt": "You are an AI math assistant. Please answer the question shared by the user.",
-    "embedding_model": "BAAI/bge-large-en-v1.5"
-}'
+}
 ```
 
 You can also use : http://127.0.0.1:8000/docs to send math queries formatted in natural language or Latex notations to backend to recieve a response.

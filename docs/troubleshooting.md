@@ -6,7 +6,8 @@ Note: To better understand what is happening under the hood and aid in troublesh
 
 # ollama model retrieval issue : 
 
-Make sure you are in correct ollama version. The app was tested on ollama version 0.5.7 (Use ollama --version to check)
+- Make sure you are in correct ollama version. The app was tested on ollama version 0.5.7 (Use ollama --version to check)
+- Use ollama list in terminal to check if you have LLM models available. 
 
 ## Application State
 
