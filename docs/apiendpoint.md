@@ -26,6 +26,9 @@ curl -X POST "http://127.0.0.1:8000/api/math-query" -H "Content-Type: applicatio
 }
 ```
 
-Options 2: Open PowerShell cd to to ./services and run ./math_query.ps1 for windows .  
+Options 2: 
+- Open PowerShell cd to to services folder in your Math RAG code location. Execute the following commands : 
+-- Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+-- ./math_query.ps1  
 
 For testing : You can also use : http://127.0.0.1:8000/docs to test the API endpoint . 
