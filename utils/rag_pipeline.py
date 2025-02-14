@@ -168,20 +168,16 @@ def rag_pipeline(uploaded_files: list = None):
 
     try:
         # Create an index from the documents
-        logs.log.info(f"Session state : {st.session_state['documents']}")
-        index = llama_index.create_index(
+        # llama_index.create_index(
+        #     st.session_state["documents"],
+        # )
+        # Create FAISS index : 
+        llama_index.create_faiss_index(
             st.session_state["documents"],
         )
          # Save the vector index to disk
-        try:
-            index.storage_context.persist(persist_dir=os.getcwd() + "/vector_db")
-            st.caption("✔️ Created File Index")
-        except Exception as err:
-            logs.log.error(f"Index Creation Error: {str(err)}")
-            error = err
-            st.exception(error)
-            st.stop()
-            
+        st.caption("✔️ Created File Index")        
+                    
     except Exception as err:
         logs.log.error(f"Index Creation Error: {str(err)}")
         error = err

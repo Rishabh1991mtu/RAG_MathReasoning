@@ -120,8 +120,9 @@ def chatbox():
             
             # RAG Math Enhacement 2 : Add a similarity score threshold to caition the user if the answer is not available in the context retrieved.
             
-            similarity_score_threshold  = 0.55 # This threshold can be adjusted based on the requirement. Currently set to 0.55 based on testing . 
-            if any(score > similarity_score_threshold for score in retrieval_scores):                
+            similarity_score_threshold  = 0.55 # This threshold can be adjusted based on the requirement. Currently set to 0.55 based on testing.
+            # Check if the maximum similarity score is less than the threshold, then display citations. 
+            if max(retrieval_scores) < similarity_score_threshold:                
                 
                 # Render response in latex and markdown language .
                 format_response_latex(chatbot_response)

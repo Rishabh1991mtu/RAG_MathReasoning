@@ -8,6 +8,10 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 from llama_index.core.node_parser import SentenceSplitter
 
+from llama_index.vector_stores.faiss import FaissVectorStore
+
+from faiss import IndexFlatL2
+
 # This is not used but required by llama-index and must be set FIRST
 # os.environ["OPENAI_API_KEY"] = "sk-abc123"
 
@@ -16,6 +20,7 @@ from llama_index.core import (
     VectorStoreIndex,
     SimpleDirectoryReader,
     Settings,
+    StorageContext,
 )
 
 
@@ -150,9 +155,9 @@ def create_index(_documents):
                                               separator=".",
                                               paragraph_separator='\n\n')],
         )
-
+        
+        index.storage_context.persist(persist_dir=os.getcwd() + "/vector_db")   
         logs.log.info("Index created from loaded documents successfully")
-        return index
     
     except Exception as err:
         logs.log.error(f"Index creation failed with user defined chunk size and chunk overlap: {err}")
@@ -162,12 +167,13 @@ def create_index(_documents):
             documents=_documents, show_progress=True,
             )
             logs.log.info("Index created from loaded documents successfully")
-            return index 
-    
+            index.storage_context.persist(persist_dir=os.getcwd() + "/vector_db") 
+
         except Exception as err:
             logs.log.error(f"Index creation failed with default chunk size and chunk overlap: {err}")
             raise Exception(f"Index creation failed with default chunk size and chunk overlap: {err}")
 
+    
 ###################################
 #
 # Create Query Engine
@@ -216,3 +222,51 @@ def create_query_engine(_documents):
     except Exception as e:
         logs.log.error(f"Error when creating Query Engine: {e}")
         raise Exception(f"Error when creating Query Engine: {e}")
+
+
+###################################
+#
+# Create FAISS Index : Vector Store with optimized search using ANNs , Complexity O(log(n))
+#
+###################################
+
+def create_faiss_index(_documents):
+    
+    try:
+        # Define FAISS storage path
+        faiss_db_path = os.path.join(os.getcwd(), "faiss_db")
+
+        # Create or load FAISS vector store
+        try : 
+            # check if faiss_db_path exists :
+            faiss_store = FaissVectorStore.from_persist_dir(faiss_db_path)
+        except Exception as e:
+            from faiss import IndexFlatL2
+            faiss_index = IndexFlatL2(d=128)  # Example dimension, adjust as needed
+            faiss_store = FaissVectorStore(faiss_index=faiss_index)
+
+        # Create storage context with FAISS
+        storage_context = StorageContext.from_defaults(vector_store=faiss_store)
+
+        # Create index using FAISS as vector store
+        index = VectorStoreIndex.from_documents(
+            documents=_documents, 
+            storage_context=storage_context,  # Store in FAISS
+            show_progress=True,
+            transformations=[
+                SentenceSplitter(chunk_size=st.session_state["chunk_size"],
+                                 chunk_overlap=st.session_state["chunk_overlap"],
+                                 separator=".",
+                                 paragraph_separator="\n\n")
+            ],
+        )
+
+        # Persist FAISS index , save vector db to disk. 
+        faiss_store.persist(faiss_db_path)
+        
+        logs.log.info("FAISS index created and stored successfully")
+        return index
+    
+    except Exception as err:
+        logs.log.error(f"Index creation failed: {err}")
+        raise Exception(f"Index creation failed: {err}")  
