@@ -125,9 +125,12 @@ def rag_pipeline(uploaded_files: list = None):
     #     hf_embedding_model = st.session_state["other_embedding_model"]
 
     try:
-        llama_index.setup_embedding_model(
+        user_embedding_model = llama_index.setup_embedding_model(
             embedding_model,
         )
+        sample_embedding = user_embedding_model.get_text_embedding("Sample text")
+        embedding_dim = len(sample_embedding)
+        
         st.caption("✔️ Embedding Model Created")
     except Exception as err:
         logs.log.error(f"Setting up Embedding Model failed: {str(err)}")
@@ -173,7 +176,7 @@ def rag_pipeline(uploaded_files: list = None):
         # )
         # Create FAISS index : 
         llama_index.create_faiss_index(
-            st.session_state["documents"],
+            st.session_state["documents"],embedding_dim
         )
          # Save the vector index to disk
         st.caption("✔️ Created File Index")        

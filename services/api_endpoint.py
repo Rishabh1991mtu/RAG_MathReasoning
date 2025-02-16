@@ -129,7 +129,6 @@ def load_index(top_k_param):
         logs.log.error(f"Error creating query engine: {e}")
         raise HTTPException(status_code=500, detail="Error creating query engine")
 
-
 def load_faiss_index(top_k_param):
     '''
     Loads the FAISS vector index from persistent storage and create faiss datbase query engine.
@@ -155,8 +154,7 @@ def load_faiss_index(top_k_param):
     except Exception as e:
         logs.log.error(f"Error creating query engine: {e}")
         raise HTTPException(status_code=500, detail="Error creating query engine")
-    
-        
+         
 def initial_setup(top_k_param):
     '''
     
@@ -179,7 +177,7 @@ def initial_setup(top_k_param):
     
     # Load the index from the storage context and create a query engine
     app.state.query_engine_RAG = load_faiss_index(top_k_param)
-    
+  
 @app.post("/api/math-query")
 async def query_llamaindex(request: QueryRequest):
     

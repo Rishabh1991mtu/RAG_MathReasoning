@@ -230,37 +230,51 @@ def create_query_engine(_documents):
 #
 ###################################
 
-def create_faiss_index(_documents):
+def create_faiss_index(_documents,dimensions):
     
     try:
         # Define FAISS storage path
+        
         faiss_db_path = os.path.join(os.getcwd(), "faiss_db")
-
+        if not os.path.exists(faiss_db_path):
+            os.makedirs(faiss_db_path)
+        
         # Create or load FAISS vector store
         try : 
             # check if faiss_db_path exists :
             faiss_store = FaissVectorStore.from_persist_dir(faiss_db_path)
         except Exception as e:
-            from faiss import IndexFlatL2
-            faiss_index = IndexFlatL2(d=128)  # Example dimension, adjust as needed
+            
+            # Get the dimension of the embedding model
+            faiss_index = IndexFlatL2(dimensions)
             faiss_store = FaissVectorStore(faiss_index=faiss_index)
 
         # Create storage context with FAISS
-        storage_context = StorageContext.from_defaults(vector_store=faiss_store)
+        storage_context = StorageContext.from_defaults(vector_store=faiss_store, persist_dir=faiss_db_path)
 
         # Create index using FAISS as vector store
-        index = VectorStoreIndex.from_documents(
-            documents=_documents, 
-            storage_context=storage_context,  # Store in FAISS
-            show_progress=True,
-            transformations=[
-                SentenceSplitter(chunk_size=st.session_state["chunk_size"],
-                                 chunk_overlap=st.session_state["chunk_overlap"],
-                                 separator=".",
-                                 paragraph_separator="\n\n")
-            ],
-        )
-
+        try : 
+            index = VectorStoreIndex.from_documents(
+                documents=_documents, 
+                storage_context=storage_context,  # Store in FAISS
+                show_progress=True,
+                transformations=[
+                    SentenceSplitter(chunk_size=st.session_state["chunk_size"],
+                                     chunk_overlap=st.session_state["chunk_overlap"],
+                                     separator=".",
+                                     paragraph_separator="\n\n")
+                ],
+            )
+        except Exception as e:
+            try : 
+                index = VectorStoreIndex.from_documents(
+                    documents=_documents, 
+                    storage_context=storage_context,  # Store in FAISS
+                    show_progress=True,
+                )  
+            except Exception as e:
+                raise Exception(f"Error creating index with FAISS: {e}")
+            
         # Persist FAISS index , save vector db to disk. 
         faiss_store.persist(faiss_db_path)
         
