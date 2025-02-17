@@ -8,7 +8,7 @@ from sympy.parsing.latex import parse_latex
 
 # RAG Math Enhacement 3 : Function to format response in latex and markdown language.
 
-def format_response_latex(response):
+def format_response_latex(response,flag=True):
     """
     Function to extract text and latex expressions from a response and render them in Streamlit.
 
@@ -31,25 +31,34 @@ def format_response_latex(response):
     # Iterate through the matches list, display text and LaTeX expressions
     for text_part, latex_part in matches:
         if text_part.strip():
-            st.write(text_part.strip())  # Display normal text
+            # Render response if flag is True
+            if flag:
+                st.write(text_part.strip())  # Display normal text
             # Concatenate text parts to form a response string.
             response_str += text_part.strip() + " "
 
         if latex_part.strip():
             clean_latex = latex_part.replace("\\[", "").replace("\\]", "").strip() # Formatting required to render latex in streamlit
-            st.latex(clean_latex)  # Display LaTeX expression
+            # Render response if flag is True
+            if flag:
+                st.latex(clean_latex)  # Display LaTeX expression
             
-            sympy_expr = parse_latex(clean_latex)
             # Concatenate sympy expressions to form a response string.
-            response_str += str(sympy_expr)
-
+            try : 
+                sympy_expr = parse_latex(clean_latex)
+                response_str += str(sympy_expr)
+            except Exception as e:
+                logs.log.error(f"Error parsing latex expression: {e} , Adding latex expression as string")
+                response_str += clean_latex
+                
     # If there is remaining text after the last LaTeX expression, display it
     # Remove all latex_pattern from the response and display the remaining text.
     
     remaining_text = re.sub(latex_pattern, "", response, flags=re.DOTALL).strip()
     if remaining_text:
         response_str += remaining_text
-        st.write(remaining_text)
+        if flag:
+            st.write(remaining_text)
 
     return response_str
 
@@ -100,10 +109,14 @@ def chatbox():
         
         top_k = st.session_state["top_k"] # Retrieve top k value from session state
         
+        # Convert LaTex expressions to symbolic expressions : 
+        format_prompt = format_response_latex(prompt,False)
+        logs.log.info(f"Format : {format_prompt}")
+        
         with st.chat_message("assistant"):
             with st.spinner("Processing..."):
                 # Call the FastAPI backend to get the response with user prompt and top k values.
-                response = call_fastapi_backend(prompt, top_k)
+                response = call_fastapi_backend(format_prompt, top_k)
                 # response = context_chat(
                 #      prompt=prompt, query_engine=st.session_state["query_engine"]
                 # )  

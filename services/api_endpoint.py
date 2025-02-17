@@ -39,7 +39,7 @@ class QueryRequest(BaseModel):
     prompt: str
     top_k_param: int
     
-def setup_ollama_llm(ollama_model, ollama_endpoint, system_prompt):
+async def setup_ollama_llm(ollama_model, ollama_endpoint, system_prompt):
     
     '''
     
@@ -60,7 +60,7 @@ def setup_ollama_llm(ollama_model, ollama_endpoint, system_prompt):
         logs.log.error(f"Setting up Ollama LLM failed: {str(err)}")
         raise Exception(f"Setting up Ollama LLM failed: {str(err)}")
 
-def setup_embedding_model(embedding_model):
+async def setup_embedding_model(embedding_model):
     
     '''
     
@@ -81,7 +81,7 @@ def setup_embedding_model(embedding_model):
         logs.log.error(f"Setting up Embedding Model failed: {str(err)}")
         raise Exception(f"Setting up Embedding Model failed: {str(err)}")
         
-def create_query_engine(index, top_k):
+async def create_query_engine(index, top_k):
      
     '''
     Function to create a llama index query engine.
@@ -104,7 +104,7 @@ def create_query_engine(index, top_k):
         logs.log.error(f"Error creating query engine: {e}")
         raise Exception(f"Error creating query engine: {e}")
 
-def load_index(top_k_param):
+async def load_index(top_k_param):
     
     '''
     Function to load the vector index from vector_db 
@@ -126,13 +126,13 @@ def load_index(top_k_param):
     
     try:
         index = load_index_from_storage(storage_context)    
-        query_engine_RAG = create_query_engine(index,top_k_param)
+        query_engine_RAG = await create_query_engine(index,top_k_param)
         return query_engine_RAG
     except Exception as e:
         logs.log.error(f"Error creating query engine: {e}")
         raise HTTPException(status_code=500, detail="Error creating query engine")
         
-def initial_setup(top_k_param):
+async def initial_setup(top_k_param):
     '''
     
     Function to setup the ollana LLM model, embedding model and creating a query engine.
@@ -149,11 +149,11 @@ def initial_setup(top_k_param):
         raise HTTPException(status_code=500, detail="Error loading configuration from config.json")
 
     # Setup Ollama LLM and embedding model using the configuration
-    setup_ollama_llm(config["ollama_model"], config["ollama_endpoint"], config["system_prompt"])
-    setup_embedding_model(config.get("embedding_model"))
+    await setup_ollama_llm(config["ollama_model"], config["ollama_endpoint"], config["system_prompt"])
+    await setup_embedding_model(config.get("embedding_model"))
     
     # Load the index from the storage context and create a query engine
-    app.state.query_engine_RAG = load_index(top_k_param)
+    app.state.query_engine_RAG = await load_index(top_k_param)
     
 @app.post("/api/math-query")
 async def query_llamaindex(request: QueryRequest):
@@ -163,9 +163,9 @@ async def query_llamaindex(request: QueryRequest):
     
     # Initial setup for creating a query engine if there is no query running instance available . 
     if app.state.query_engine_RAG is None:
-        
+        # Double-check within the lock
         logs.log.info("Query engine is not available for processing the query. Setting up the query engine...")
-        initial_setup(request.top_k_param)
+        await initial_setup(request.top_k_param)
         logs.log.info("Query engine is available for processing the query")
         
     else : 
@@ -179,7 +179,7 @@ async def query_llamaindex(request: QueryRequest):
             raise HTTPException(status_code=500, detail="Error processing query")
         
         else:
-            doc_nodes = app.state.query_engine_RAG.retrieve(user_prompt) 
+            doc_nodes = app.state.query_engine_RAG.retrieve(user_prompt)             
             logs.log.info(f"Response from query engine: {chatbot_response.response}")
             if hasattr(chatbot_response, 'response') and len(doc_nodes) > 0:
                 return {"response": chatbot_response.response, "nodes": doc_nodes}
@@ -200,4 +200,8 @@ def run_fastapi():
         logs.log.error(f"Error starting FastAPI server: {e}")
 
 if __name__ == "__main__":
+    
     run_fastapi()
+
+Issue : 
+# Async with llamaindex : https://docs.llamaindex.ai/en/stable/examples/pipeline/query_pipeline_async/
