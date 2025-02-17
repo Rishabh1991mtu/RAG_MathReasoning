@@ -4,6 +4,7 @@ import requests
 import re
 import json
 import os
+from sympy.parsing.latex import parse_latex
 
 # RAG Math Enhacement 3 : Function to format response in latex and markdown language.
 
@@ -14,27 +15,43 @@ def format_response_latex(response):
     Args:
         response (str): The response string containing answer from LLM model.
     """
+    
     # Log the original response
     logs.log.info(f"Response: {response}")
 
-    # Regular expression to extract LaTeX expressions inside \[ ... \] blocks
+    # Regular expression to extract text with LaTeX expressions inside \[ ... \] blocks : 
     latex_pattern = r"(.*?)?(\\\[.*?\\\])"
 
     # Find all text and LaTeX pairs
+    # re.DOTALL : Matches any character including \n. LateX expresssion are in mutiple lines which have new line characters. 
     matches = re.findall(latex_pattern, response, re.DOTALL)
+    # String to store the response in Natural Lanaguage and Symbolic format. 
+    response_str =  ""
 
+    # Iterate through the matches list, display text and LaTeX expressions
     for text_part, latex_part in matches:
         if text_part.strip():
             st.write(text_part.strip())  # Display normal text
+            # Concatenate text parts to form a response string.
+            response_str += text_part.strip() + " "
 
         if latex_part.strip():
             clean_latex = latex_part.replace("\\[", "").replace("\\]", "").strip() # Formatting required to render latex in streamlit
             st.latex(clean_latex)  # Display LaTeX expression
+            
+            sympy_expr = parse_latex(clean_latex)
+            # Concatenate sympy expressions to form a response string.
+            response_str += str(sympy_expr)
 
     # If there is remaining text after the last LaTeX expression, display it
+    # Remove all latex_pattern from the response and display the remaining text.
+    
     remaining_text = re.sub(latex_pattern, "", response, flags=re.DOTALL).strip()
     if remaining_text:
+        response_str += remaining_text
         st.write(remaining_text)
+
+    return response_str
 
 def call_fastapi_backend(user_input,top_k):
     """
