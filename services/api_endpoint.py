@@ -10,6 +10,10 @@ from llama_index.core import StorageContext, load_index_from_storage, Settings
 import os
 import json
 import utils.llama_index as llama_index
+from llama_index.core.indices.vector_store import AsyncVectorStoreIndex
+import asyncio
+from hypercorn.config import Config
+from hypercorn.asyncio import serve
 
 app = FastAPI()
 # Allow CORS for local testing
@@ -101,33 +105,33 @@ def create_query_engine(index, top_k):
         logs.log.error(f"Error creating query engine: {e}")
         raise Exception(f"Error creating query engine: {e}")
 
-def load_index(top_k_param):
+# def load_index(top_k_param):
     
-    '''
-    Function to load the vector index from vector_db 
+#     '''
+#     Function to load the vector index from vector_db 
     
-    '''
+#     '''
       
-    # Load search index from storage
-    try:            
-        storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/vector_db")            
-        logs.log.info("Index successfully loaded from storage.")
+#     # Load search index from storage
+#     try:            
+#         storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/vector_db")            
+#         logs.log.info("Index successfully loaded from storage.")
             
-    except Exception as e:
+#     except Exception as e:
         
-        err = f"Error loading vector DB or index from storage , Please check if documents have been loaded and indexed form Math Reasoning RAG app: {e}"
-        logs.log.error(f"error: {err}")
-        raise HTTPException(status_code=500, detail=err)
+#         err = f"Error loading vector DB or index from storage , Please check if documents have been loaded and indexed form Math Reasoning RAG app: {e}"
+#         logs.log.error(f"error: {err}")
+#         raise HTTPException(status_code=500, detail=err)
     
-    # Load the index from the storage context and create a query engine :   
+#     # Load the index from the storage context and create a query engine :   
     
-    try:
-        index = load_index_from_storage(storage_context)    
-        query_engine_RAG = create_query_engine(index,top_k_param)
-        return query_engine_RAG
-    except Exception as e:
-        logs.log.error(f"Error creating query engine: {e}")
-        raise HTTPException(status_code=500, detail="Error creating query engine")
+#     try:
+#         index = load_index_from_storage(storage_context)    
+#         query_engine_RAG = create_query_engine(index,top_k_param)
+#         return query_engine_RAG
+#     except Exception as e:
+#         logs.log.error(f"Error creating query engine: {e}")
+#         raise HTTPException(status_code=500, detail="Error creating query engine")
         
 def initial_setup(top_k_param):
     '''
@@ -151,6 +155,22 @@ def initial_setup(top_k_param):
     
     # Load the index from the storage context and create a query engine
     app.state.query_engine_RAG = load_index(top_k_param)
+
+# Async setup function to load index : 
+
+async def load_index(top_k_param):
+    try:
+        storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/vector_db")
+        index = await AsyncVectorStoreIndex.from_vector_store(storage_context.vector_store)
+        query_engine_RAG = index.as_query_engine(
+            similarity_top_k=top_k_param,
+            response_mode="compact",
+            streaming=True,
+        )
+        return query_engine_RAG
+    except Exception as e:
+        logs.log.error(f"Error loading index or creating query engine: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/api/math-query")
 async def query_llamaindex(request: QueryRequest):
@@ -162,7 +182,7 @@ async def query_llamaindex(request: QueryRequest):
     if app.state.query_engine_RAG is None:
         
         logs.log.info("Query engine is not available for processing the query. Setting up the query engine...")
-        initial_setup(request.top_k_param)
+        await initial_setup(request.top_k_param)
         logs.log.info("Query engine is available for processing the query")
         
     else : 
@@ -170,13 +190,13 @@ async def query_llamaindex(request: QueryRequest):
     # Send the query to the query engine and retrieve the response
     
     try:
-        chatbot_response = app.state.query_engine_RAG.query(request.prompt)
+        chatbot_response = await app.state.query_engine_RAG.query(request.prompt) # Waiting for respond. 
         if chatbot_response is None:
             logs.log.error(f"Error processing query: {request.prompt}")
             raise HTTPException(status_code=500, detail="Error processing query")
         
         else:
-            doc_nodes = app.state.query_engine_RAG.retrieve(request.prompt) 
+            doc_nodes = await app.state.query_engine_RAG.retrieve(request.prompt) 
             logs.log.info(f"Response from query engine: {chatbot_response.response}")
             if hasattr(chatbot_response, 'response') and len(doc_nodes) > 0:
                 return {"response": chatbot_response.response, "nodes": doc_nodes}
@@ -188,13 +208,20 @@ async def query_llamaindex(request: QueryRequest):
         logs.log.error(f"Error processing query: {e}")
         raise HTTPException(status_code=500, detail="Error processing query")  
     
-# Function to run FastAPI in a separate process
-def run_fastapi():
+# # Function to run FastAPI in a separate process
+# def run_fastapi():
+#     logs.log.info("Starting FastAPI server...")
+#     try : 
+#         uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+#     except Exception as e:
+#         logs.log.error(f"Error starting FastAPI server: {e}")
+
+async def run_fastapi():
     logs.log.info("Starting FastAPI server...")
-    try : 
-        uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
-    except Exception as e:
-        logs.log.error(f"Error starting FastAPI server: {e}")
+    config = Config()
+    config.bind = ["0.0.0.0:8000"]
+    await serve(app, config)
 
 if __name__ == "__main__":
-    run_fastapi()
+    asyncio.run(run_fastapi())
+

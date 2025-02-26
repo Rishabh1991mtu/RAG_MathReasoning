@@ -11,6 +11,7 @@ os.environ["OPENAI_API_KEY"] = "sk-abc123"
 from llama_index.llms.ollama import Ollama
 from llama_index.core import Settings
 from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
+from ollama import AsyncClient
 
 ###################################
 #
@@ -98,32 +99,32 @@ def get_models():
 ###################################
 
 
-@st.cache_data(show_spinner=False)
-def create_ollama_llm(model: str, base_url: str, system_prompt: str = None, request_timeout: int = 60) -> Ollama:
-    """
-    Create an instance of the Ollama language model.
+# @st.cache_data(show_spinner=False)
+# def create_ollama_llm(model: str, base_url: str, system_prompt: str = None, request_timeout: int = 60) -> Ollama:
+#     """
+#     Create an instance of the Ollama language model.
 
-    Parameters:
-        - model (str): The name of the model to use for language processing.
-        - base_url (str): The base URL for making API requests.
-        - request_timeout (int, optional): The timeout for API requests in seconds. Defaults to 60.
+#     Parameters:
+#         - model (str): The name of the model to use for language processing.
+#         - base_url (str): The base URL for making API requests.
+#         - request_timeout (int, optional): The timeout for API requests in seconds. Defaults to 60.
 
-    Returns:
-        - llm: An instance of the Ollama language model with the specified configuration.
-    """
-    try:
-        Settings.llm = Ollama(model=model,
-                              base_url=base_url,
-                              system_prompt=system_prompt,
-                              request_timeout=request_timeout,
-                              model_kwargs={"max_tokens": 1000, "temperature": 0, "top_p": 0.7, "top_k": 10})
+#     Returns:
+#         - llm: An instance of the Ollama language model with the specified configuration.
+#     """
+#     try:
+#         Settings.llm = Ollama(model=model,
+#                               base_url=base_url,
+#                               system_prompt=system_prompt,
+#                               request_timeout=request_timeout,
+#                               model_kwargs={"max_tokens": 1000, "temperature": 0, "top_p": 0.7, "top_k": 10})
         
-        #Settings.llm = Ollama(model=model, base_url=base_url, request_timeout=request_timeout)
-        logs.log.info("Ollama LLM instance created successfully")
-        return Settings.llm
-    except Exception as e:
-        logs.log.error(f"Error creating Ollama language model: {e}")
-        return None
+#         #Settings.llm = Ollama(model=model, base_url=base_url, request_timeout=request_timeout)
+#         logs.log.info("Ollama LLM instance created successfully")
+#         return Settings.llm
+#     except Exception as e:
+#         logs.log.error(f"Error creating Ollama language model: {e}")
+#         return None
 
 
 ###################################
@@ -163,6 +164,7 @@ def chat(prompt: str):
 #
 ###################################
 
+@st.cache_data(show_spinner=False)
 
 def context_chat(prompt: str, query_engine: RetrieverQueryEngine):
     """
@@ -204,6 +206,35 @@ def context_chat(prompt: str, query_engine: RetrieverQueryEngine):
     except Exception as err:
         logs.log.error(f"Ollama chat stream error: {err}")
         return
+
+
+###################################
+#
+# Async Ollama Chat : 
+###################################
+
+async def create_ollama_llm(model : str, base_url : str, system_prompt : str = None, request_timeout : int = 60) -> Ollama:
+    
+    try:
+        client = AsyncClient(base_url=base_url)
+        Settings.llm = await client.chat(
+            model=model,
+            messages=[{"role": "system", "content": system_prompt}],
+            options={
+                "max_tokens": 1000,
+                "temperature": 0.1,
+                "top_p": 0.7,
+                "top_k": 10
+            },
+            timeout=request_timeout
+        )
+        logs.log.info("Ollama LLM instance created successfully")
+        return Settings.llm
+    
+    except Exception as e:
+        logs.log.error(f"Error creating Ollama language model: {e}")
+        return None
+
 
 def new_func(prompt, query_engine):
     return query_engine.query(prompt)
