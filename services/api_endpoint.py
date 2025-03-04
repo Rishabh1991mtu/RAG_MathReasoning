@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 import utils.logs as logs
 from utils.ollama_utility import create_ollama_llm
@@ -10,7 +11,7 @@ from llama_index.core import StorageContext, load_index_from_storage, Settings
 import os
 import json
 import utils.llama_index as llama_index
-from llama_index.core.indices.vector_store import AsyncVectorStoreIndex
+# from llama_index.core.indices.vector_store import AsyncVectorStoreIndex
 import asyncio
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
@@ -40,49 +41,49 @@ class QueryRequest(BaseModel):
     prompt: str
     top_k_param: int
     
-def setup_ollama_llm(ollama_model, ollama_endpoint, system_prompt):
+# def setup_ollama_llm(ollama_model, ollama_endpoint, system_prompt):
     
-    '''
+#     '''
     
-    Function to setup the Ollama LLM model.
+#     Function to setup the Ollama LLM model.
     
-    args:
+#     args:
     
-    ollama_model : str : The name of the Ollama model.
-    ollama_endpoint : str : The Ollama endpoint.
-    system_prompt : str : The system prompt.
+#     ollama_model : str : The name of the Ollama model.
+#     ollama_endpoint : str : The Ollama endpoint.
+#     system_prompt : str : The system prompt.
     
-    '''
+#     '''
     
-    try:
-        Settings.llm = create_ollama_llm(ollama_model, ollama_endpoint, system_prompt)
+#     try:
+#         Settings.llm = create_ollama_llm(ollama_model, ollama_endpoint, system_prompt)
         
-    except Exception as err:
-        logs.log.error(f"Setting up Ollama LLM failed: {str(err)}")
-        raise Exception(f"Setting up Ollama LLM failed: {str(err)}")
+#     except Exception as err:
+#         logs.log.error(f"Setting up Ollama LLM failed: {str(err)}")
+#         raise Exception(f"Setting up Ollama LLM failed: {str(err)}")
 
-def setup_embedding_model(embedding_model):
+# def setup_embedding_model(embedding_model):
     
-    '''
+#     '''
     
-    Function to setup the embedding model.
+#     Function to setup the embedding model.
     
-    args:
+#     args:
     
-    hf_embedding_model : str : The name of the embedding set in UI .
+#     hf_embedding_model : str : The name of the embedding set in UI .
     
-    '''
+#     '''
        
-    try:
-        Settings.embed_model = llama_index.setup_embedding_model(
-            embedding_model,
-        )
+#     try:
+#         Settings.embed_model = llama_index.setup_embedding_model(
+#             embedding_model,
+#         )
         
-    except Exception as err:
-        logs.log.error(f"Setting up Embedding Model failed: {str(err)}")
-        raise Exception(f"Setting up Embedding Model failed: {str(err)}")
+#     except Exception as err:
+#         logs.log.error(f"Setting up Embedding Model failed: {str(err)}")
+#         raise Exception(f"Setting up Embedding Model failed: {str(err)}")
         
-def create_query_engine(index, top_k):
+async def create_query_engine(index, top_k):
      
     '''
     Function to create a llama index query engine.
@@ -133,7 +134,7 @@ def create_query_engine(index, top_k):
 #         logs.log.error(f"Error creating query engine: {e}")
 #         raise HTTPException(status_code=500, detail="Error creating query engine")
         
-def initial_setup(top_k_param):
+async def initial_setup(top_k_param):
     '''
     
     Function to setup the ollana LLM model, embedding model and creating a query engine.
@@ -150,27 +151,71 @@ def initial_setup(top_k_param):
         raise HTTPException(status_code=500, detail="Error loading configuration from config.json")
 
     # Setup Ollama LLM and embedding model using the configuration
-    setup_ollama_llm(config["ollama_model"], config["ollama_endpoint"], config["system_prompt"])
-    setup_embedding_model(config.get("embedding_model"))
+    # setup_ollama_llm(config["ollama_model"], config["ollama_endpoint"], config["system_prompt"])
+    
+    # Create an instance of ollama model langugage : 
+    try : 
+        Settings.llm = await create_ollama_llm(config["ollama_model"], config["ollama_endpoint"], config["system_prompt"])
+    except Exception as e:
+        logs.log.error(f"Error creating Ollama language model: {e}")
+        raise HTTPException(status_code=500, detail="Error creating Ollama language model")
+    
+    # Create an instance of the emebedding model :
+    try : 
+        Settings.embed_model = llama_index.setup_embedding_model(
+                config.get("embedding_model"),
+        )    
+    except Exception as e:
+        logs.log.error(f"Error setting up embedding model: {e}")
+        raise HTTPException(status_code=500, detail="Error setting up embedding model") 
     
     # Load the index from the storage context and create a query engine
-    app.state.query_engine_RAG = load_index(top_k_param)
+    app.state.query_engine_RAG = await load_index(top_k_param)
 
 # Async setup function to load index : 
 
 async def load_index(top_k_param):
+    
+    '''
+    Function to load the vector index from vector_db 
+    
+    '''
+      
+    # Load search index from storage
+    try:            
+        storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/vector_db")            
+        logs.log.info("Index successfully loaded from storage.")
+            
+    except Exception as e:
+        
+        err = f"Error loading vector DB or index from storage , Please check if documents have been loaded and indexed form Math Reasoning RAG app: {e}"
+        logs.log.error(f"error: {err}")
+        raise HTTPException(status_code=500, detail=err)
+    
+    # Load the index from the storage context and create a query engine :   
+    
     try:
-        storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/vector_db")
-        index = await AsyncVectorStoreIndex.from_vector_store(storage_context.vector_store)
-        query_engine_RAG = index.as_query_engine(
-            similarity_top_k=top_k_param,
-            response_mode="compact",
-            streaming=True,
-        )
+        index = load_index_from_storage(storage_context)    
+        # Initialize the query engine with the index and top_k_param : 
+        query_engine_RAG = await create_query_engine(index,top_k_param)
         return query_engine_RAG
     except Exception as e:
-        logs.log.error(f"Error loading index or creating query engine: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logs.log.error(f"Error creating query engine: {e}")
+        raise HTTPException(status_code=500, detail="Error creating query engine")
+
+# async def load_index(top_k_param):
+#     try:
+#         storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/vector_db")
+#         index = await AsyncVectorStoreIndex.from_vector_store(storage_context.vector_store)
+#         query_engine_RAG = index.as_query_engine(
+#             similarity_top_k=top_k_param,
+#             response_mode="compact",
+#             streaming=True,
+#         )
+#         return query_engine_RAG
+#     except Exception as e:
+#         logs.log.error(f"Error loading index or creating query engine: {e}")
+#         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/api/math-query")
 async def query_llamaindex(request: QueryRequest):
@@ -190,13 +235,17 @@ async def query_llamaindex(request: QueryRequest):
     # Send the query to the query engine and retrieve the response
     
     try:
-        chatbot_response = await app.state.query_engine_RAG.query(request.prompt) # Waiting for respond. 
+        # This will allow concurrent requests to be accepted by FAST API using threads. 
+        # It will still use a single instance of the query engine to process the requests. That will save memory as the query engine is loaded only once.
+        # Concurrent requests will be processed in parallel using threads 
+        
+        chatbot_response = await run_in_threadpool(app.state.query_engine_RAG.query,request.prompt)  
         if chatbot_response is None:
             logs.log.error(f"Error processing query: {request.prompt}")
             raise HTTPException(status_code=500, detail="Error processing query")
         
         else:
-            doc_nodes = await app.state.query_engine_RAG.retrieve(request.prompt) 
+            doc_nodes = await run_in_threadpool(app.state.query_engine_RAG.retrieve,request.prompt)
             logs.log.info(f"Response from query engine: {chatbot_response.response}")
             if hasattr(chatbot_response, 'response') and len(doc_nodes) > 0:
                 return {"response": chatbot_response.response, "nodes": doc_nodes}

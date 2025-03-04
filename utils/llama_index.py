@@ -11,7 +11,6 @@ from llama_index.core.node_parser import SentenceSplitter
 # This is not used but required by llama-index and must be set FIRST
 # os.environ["OPENAI_API_KEY"] = "sk-abc123"
 
-
 from llama_index.core import (
     VectorStoreIndex,
     SimpleDirectoryReader,

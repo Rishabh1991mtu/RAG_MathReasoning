@@ -14,8 +14,8 @@ def format_response_latex(response):
     Args:
         response (str): The response string containing answer from LLM model.
     """
-    # Log the original response
-    logs.log.info(f"Response: {response}")
+    # # Log the original response
+    # logs.log.info(f"Response: {response}")
 
     # Regular expression to extract LaTeX expressions inside \[ ... \] blocks
     latex_pattern = r"(.*?)?(\\\[.*?\\\])"
