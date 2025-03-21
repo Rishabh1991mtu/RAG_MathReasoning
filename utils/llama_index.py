@@ -8,6 +8,11 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 from llama_index.core.node_parser import SentenceSplitter
 
+import chromadb
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core import StorageContext
+from chromadb import PersistentClient
+
 # This is not used but required by llama-index and must be set FIRST
 # os.environ["OPENAI_API_KEY"] = "sk-abc123"
 
@@ -139,33 +144,66 @@ def create_index(_documents):
     Notes:
         The `documents` parameter should be a list of strings representing the content of the documents to be indexed.
     """
+    
+    try: 
+        chroma_client = chromadb.PersistentClient(path=os.getcwd() + "/chroma_db")
+        if "documents_collection" in chroma_client.list_collections():
+            chroma_collection = chroma_client.get_collection("documents_collection")
+        else:
+            chroma_collection = chroma_client.create_collection("documents_collection")
 
-    # Updated code to include SentenceSplitter based on chunk size and overlap
-    try:
-        index = VectorStoreIndex.from_documents(
-            documents=_documents, show_progress=True,
-            transformations=[SentenceSplitter(chunk_size=st.session_state["chunk_size"],
-                                              chunk_overlap=st.session_state["chunk_overlap"],
-                                              separator=".",
-                                              paragraph_separator='\n\n')],
+        # Create Chroma vector store and storage context : 
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        storage_context_chroma = StorageContext.from_defaults(vector_store=vector_store)
+        
+        logs.log.info("Embedding model is : ", Settings.embed_model)
+        
+        # Create index with Chroma integration : 
+        VectorStoreIndex.from_documents(
+            documents=_documents,
+            storage_context=storage_context_chroma,
+            show_progress=True,
+            transformations=[SentenceSplitter(
+                chunk_size=st.session_state["chunk_size"],
+                chunk_overlap=st.session_state["chunk_overlap"],
+                separator=".",
+                paragraph_separator='\n\n'
+            )],
+            embed_model=Settings.embed_model  # Explicitly pass the embedding model
         )
-
+        
         logs.log.info("Index created from loaded documents successfully")
-        return index
     
     except Exception as err:
         logs.log.error(f"Index creation failed with user defined chunk size and chunk overlap: {err}")
-        
-        try : 
-            index = VectorStoreIndex.from_documents(
-            documents=_documents, show_progress=True,
-            )
-            logs.log.info("Index created from loaded documents successfully")
-            return index 
+        raise RuntimeError(f"Index creation failed with user defined chunk size and chunk overlap: {err}")
     
-        except Exception as err:
-            logs.log.error(f"Index creation failed with default chunk size and chunk overlap: {err}")
-            raise Exception(f"Index creation failed with default chunk size and chunk overlap: {err}")
+    # # Updated code to include SentenceSplitter based on chunk size and overlap
+    # try:
+    #     index = VectorStoreIndex.from_documents(
+    #         documents=_documents, show_progress=True,
+    #         transformations=[SentenceSplitter(chunk_size=st.session_state["chunk_size"],
+    #                                           chunk_overlap=st.session_state["chunk_overlap"],
+    #                                           separator=".",
+    #                                           paragraph_separator='\n\n')],
+    #     )
+
+    #     logs.log.info("Index created from loaded documents successfully")
+    #     return index
+    
+    # except Exception as err:
+    #     logs.log.error(f"Index creation failed with user defined chunk size and chunk overlap: {err}")
+        
+    #     try : 
+    #         index = VectorStoreIndex.from_documents(
+    #         documents=_documents, show_progress=True,
+    #         )
+    #         logs.log.info("Index created from loaded documents successfully")
+    #         return index 
+    
+    #     except Exception as err:
+    #         logs.log.error(f"Index creation failed with default chunk size and chunk overlap: {err}")
+    #         raise Exception(f"Index creation failed with default chunk size and chunk overlap: {err}")
 
 ###################################
 #

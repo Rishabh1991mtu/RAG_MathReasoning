@@ -40,49 +40,7 @@ class QueryRequest(BaseModel):
 
     prompt: str
     top_k_param: int
-    
-# def setup_ollama_llm(ollama_model, ollama_endpoint, system_prompt):
-    
-#     '''
-    
-#     Function to setup the Ollama LLM model.
-    
-#     args:
-    
-#     ollama_model : str : The name of the Ollama model.
-#     ollama_endpoint : str : The Ollama endpoint.
-#     system_prompt : str : The system prompt.
-    
-#     '''
-    
-#     try:
-#         Settings.llm = create_ollama_llm(ollama_model, ollama_endpoint, system_prompt)
-        
-#     except Exception as err:
-#         logs.log.error(f"Setting up Ollama LLM failed: {str(err)}")
-#         raise Exception(f"Setting up Ollama LLM failed: {str(err)}")
-
-# def setup_embedding_model(embedding_model):
-    
-#     '''
-    
-#     Function to setup the embedding model.
-    
-#     args:
-    
-#     hf_embedding_model : str : The name of the embedding set in UI .
-    
-#     '''
-       
-#     try:
-#         Settings.embed_model = llama_index.setup_embedding_model(
-#             embedding_model,
-#         )
-        
-#     except Exception as err:
-#         logs.log.error(f"Setting up Embedding Model failed: {str(err)}")
-#         raise Exception(f"Setting up Embedding Model failed: {str(err)}")
-        
+           
 async def create_query_engine(index, top_k):
      
     '''
@@ -105,35 +63,7 @@ async def create_query_engine(index, top_k):
     except Exception as e:
         logs.log.error(f"Error creating query engine: {e}")
         raise Exception(f"Error creating query engine: {e}")
-
-# def load_index(top_k_param):
-    
-#     '''
-#     Function to load the vector index from vector_db 
-    
-#     '''
-      
-#     # Load search index from storage
-#     try:            
-#         storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/vector_db")            
-#         logs.log.info("Index successfully loaded from storage.")
-            
-#     except Exception as e:
-        
-#         err = f"Error loading vector DB or index from storage , Please check if documents have been loaded and indexed form Math Reasoning RAG app: {e}"
-#         logs.log.error(f"error: {err}")
-#         raise HTTPException(status_code=500, detail=err)
-    
-#     # Load the index from the storage context and create a query engine :   
-    
-#     try:
-#         index = load_index_from_storage(storage_context)    
-#         query_engine_RAG = create_query_engine(index,top_k_param)
-#         return query_engine_RAG
-#     except Exception as e:
-#         logs.log.error(f"Error creating query engine: {e}")
-#         raise HTTPException(status_code=500, detail="Error creating query engine")
-        
+       
 async def initial_setup(top_k_param):
     '''
     
@@ -183,12 +113,12 @@ async def load_index(top_k_param):
       
     # Load search index from storage
     try:            
-        storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/vector_db")            
-        logs.log.info("Index successfully loaded from storage.")
+        storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/chroma_db")            
+        logs.log.info("Chroma index successfully loaded from the storage.")
             
     except Exception as e:
         
-        err = f"Error loading vector DB or index from storage , Please check if documents have been loaded and indexed form Math Reasoning RAG app: {e}"
+        err = f"Error index from Chroma DB , Please check if documents have been loaded and indexed form Math Reasoning RAG app: {e}"
         logs.log.error(f"error: {err}")
         raise HTTPException(status_code=500, detail=err)
     
@@ -202,21 +132,7 @@ async def load_index(top_k_param):
     except Exception as e:
         logs.log.error(f"Error creating query engine: {e}")
         raise HTTPException(status_code=500, detail="Error creating query engine")
-
-# async def load_index(top_k_param):
-#     try:
-#         storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/vector_db")
-#         index = await AsyncVectorStoreIndex.from_vector_store(storage_context.vector_store)
-#         query_engine_RAG = index.as_query_engine(
-#             similarity_top_k=top_k_param,
-#             response_mode="compact",
-#             streaming=True,
-#         )
-#         return query_engine_RAG
-#     except Exception as e:
-#         logs.log.error(f"Error loading index or creating query engine: {e}")
-#         raise HTTPException(status_code=500, detail=str(e))
-    
+   
 @app.post("/api/math-query")
 async def query_llamaindex(request: QueryRequest):
     
@@ -239,7 +155,9 @@ async def query_llamaindex(request: QueryRequest):
         # It will still use a single instance of the query engine to process the requests. That will save memory as the query engine is loaded only once.
         # Concurrent requests will be processed in parallel using threads 
         
-        chatbot_response = await run_in_threadpool(app.state.query_engine_RAG.query,request.prompt)  
+ 
+        chatbot_response = await run_in_threadpool(app.state.query_engine_RAG.query,request.prompt) 
+        logs.log.info(f"Response from query engine: {chatbot_response.response}") 
         if chatbot_response is None:
             logs.log.error(f"Error processing query: {request.prompt}")
             raise HTTPException(status_code=500, detail="Error processing query")
@@ -257,14 +175,6 @@ async def query_llamaindex(request: QueryRequest):
         logs.log.error(f"Error processing query: {e}")
         raise HTTPException(status_code=500, detail="Error processing query")  
     
-# # Function to run FastAPI in a separate process
-# def run_fastapi():
-#     logs.log.info("Starting FastAPI server...")
-#     try : 
-#         uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
-#     except Exception as e:
-#         logs.log.error(f"Error starting FastAPI server: {e}")
-
 async def run_fastapi():
     logs.log.info("Starting FastAPI server...")
     config = Config()

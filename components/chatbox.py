@@ -42,7 +42,8 @@ def call_fastapi_backend(user_input,top_k):
     """
     
     # Read API endpoint from config.json
-
+    logs.log.info("Reading API endpoint from config.json")
+    
     config_path = os.path.join(os.getcwd(), 'config', 'config.json')
     try: 
         with open(config_path) as config_file:
@@ -53,6 +54,8 @@ def call_fastapi_backend(user_input,top_k):
     except Exception as e:
         st.error(f"Error reading config file: {e}")
         return None
+    
+    logs.log.info(f"API endpoint is {API_endpoint}")
         
     # Send POST request to FastAPI backend : 
     
@@ -74,8 +77,10 @@ def chatbox():
     Args:
         None
     """
+    logs.log.info("Setting up chatbox...")
+    # Walrus expression to check if the user has entered a question or not . If yes send post requests
     if prompt := st.chat_input("How can I help?"):
-
+        
         # Add the user input to messages state
         st.session_state["messages"].append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -87,9 +92,6 @@ def chatbox():
             with st.spinner("Processing..."):
                 # Call the FastAPI backend to get the response with user prompt and top k values.
                 response = call_fastapi_backend(prompt, top_k)
-                # response = context_chat(
-                #      prompt=prompt, query_engine=st.session_state["query_engine"]
-                # )  
         
         logs.log.info(f"Response from FastAPI backend is {response}")
         

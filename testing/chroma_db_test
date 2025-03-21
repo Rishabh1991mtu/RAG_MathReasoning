@@ -1,0 +1,11 @@
+import chromadb
+import os
+
+client = chromadb.PersistentClient(path=os.getcwd() + "./chroma_db")  # Use correct path
+collection = client.get_collection(client.list_collections())  # Replace with your collection name
+
+# Retrieve all documents
+documents = collection.get()
+for key, value in documents.items():
+    if key == "documents":
+        print(f"value : {value[0:10]} \n\n")
