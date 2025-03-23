@@ -121,7 +121,7 @@ def load_documents(data_dir: str):
 #
 ###################################
 
-
+# Source link : https://docs.llamaindex.ai/en/stable/examples/vector_stores/ChromaIndexDemo/
 @st.cache_resource(show_spinner=False)
 def create_index(_documents):
     
@@ -146,7 +146,7 @@ def create_index(_documents):
     """
     
     try: 
-        chroma_client = chromadb.PersistentClient(path=os.getcwd() + "/chroma_db")
+        chroma_client = chromadb.PersistentClient(path=os.getcwd() + "./chroma_db")
         if "documents_collection" in chroma_client.list_collections():
             chroma_collection = chroma_client.get_collection("documents_collection")
         else:
@@ -159,7 +159,7 @@ def create_index(_documents):
         logs.log.info("Embedding model is : ", Settings.embed_model)
         
         # Create index with Chroma integration : 
-        VectorStoreIndex.from_documents(
+        index = VectorStoreIndex.from_documents(
             documents=_documents,
             storage_context=storage_context_chroma,
             show_progress=True,
@@ -172,7 +172,8 @@ def create_index(_documents):
             embed_model=Settings.embed_model  # Explicitly pass the embedding model
         )
         
-        logs.log.info("Index created from loaded documents successfully")
+        index.storage_context.persist(persist_dir=os.getcwd() + "./chroma_db")
+        logs.log.info("Index created and persisted successfully.")
     
     except Exception as err:
         logs.log.error(f"Index creation failed with user defined chunk size and chunk overlap: {err}")

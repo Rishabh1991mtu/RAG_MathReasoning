@@ -15,6 +15,10 @@ import utils.llama_index as llama_index
 import asyncio
 from hypercorn.config import Config
 from hypercorn.asyncio import serve
+import chromadb
+from chromadb import PersistentClient
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core import VectorStoreIndex
 
 app = FastAPI()
 # Allow CORS for local testing
@@ -54,11 +58,12 @@ async def create_query_engine(index, top_k):
     ''' 
       
     try:
-        query_engine = index.as_query_engine(
-            similarity_top_k=top_k,
-            response_mode="compact",
-            streaming=False,  # Set streaming to False
-        )
+        # query_engine = index.as_query_engine(
+        #     similarity_top_k=top_k,
+        #     response_mode="compact",
+        #     streaming=False,  # Set streaming to False
+        # )
+        query_engine = index.as_query_engine(similarity_top_k=top_k)
         return query_engine
     except Exception as e:
         logs.log.error(f"Error creating query engine: {e}")
@@ -79,9 +84,6 @@ async def initial_setup(top_k_param):
     except Exception as e:
         logs.log.error(f"Error loading configuration from config.json: {e}")
         raise HTTPException(status_code=500, detail="Error loading configuration from config.json")
-
-    # Setup Ollama LLM and embedding model using the configuration
-    # setup_ollama_llm(config["ollama_model"], config["ollama_endpoint"], config["system_prompt"])
     
     # Create an instance of ollama model langugage : 
     try : 
@@ -100,38 +102,59 @@ async def initial_setup(top_k_param):
         raise HTTPException(status_code=500, detail="Error setting up embedding model") 
     
     # Load the index from the storage context and create a query engine
-    app.state.query_engine_RAG = await load_index(top_k_param)
+    app.state.query_engine_RAG = await load_index_chroma(top_k_param)
+
+async def load_index_chroma(top_k_param):
+    
+    try : 
+        # load from disk
+        db2 = chromadb.PersistentClient(path=os.getcwd() + "./chroma_db")
+        chroma_collection = db2.get_or_create_collection("documents_collection")
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        index = VectorStoreIndex.from_vector_store(
+            vector_store,
+            embed_model=Settings.embed_model,
+        )
+        
+        logs.log.info("Chroma index successfully loaded from the storage.")
+
+    except Exception as e:
+        logs.log.error(f"Error loading index from Chroma DB: {e}")
+        raise HTTPException(status_code=500, detail="Error loading index from Chroma DB")
+    
+    query_engine_RAG = await create_query_engine(index,top_k_param)
+    return query_engine_RAG
 
 # Async setup function to load index : 
 
-async def load_index(top_k_param):
+# async def load_index(top_k_param):
     
-    '''
-    Function to load the vector index from vector_db 
+#     '''
+#     Function to load the vector index from vector_db 
     
-    '''
+#     '''
       
-    # Load search index from storage
-    try:            
-        storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/chroma_db")            
-        logs.log.info("Chroma index successfully loaded from the storage.")
+#     # Load search index from storage
+#     try:            
+#         storage_context = StorageContext.from_defaults(persist_dir=os.getcwd() + "/chroma_db")            
+#         logs.log.info("Chroma index successfully loaded from the storage.")
             
-    except Exception as e:
+#     except Exception as e:
         
-        err = f"Error index from Chroma DB , Please check if documents have been loaded and indexed form Math Reasoning RAG app: {e}"
-        logs.log.error(f"error: {err}")
-        raise HTTPException(status_code=500, detail=err)
+#         err = f"Error index from Chroma DB , Please check if documents have been loaded and indexed form Math Reasoning RAG app: {e}"
+#         logs.log.error(f"error: {err}")
+#         raise HTTPException(status_code=500, detail=err)
     
-    # Load the index from the storage context and create a query engine :   
+#     # Load the index from the storage context and create a query engine :   
     
-    try:
-        index = load_index_from_storage(storage_context)    
-        # Initialize the query engine with the index and top_k_param : 
-        query_engine_RAG = await create_query_engine(index,top_k_param)
-        return query_engine_RAG
-    except Exception as e:
-        logs.log.error(f"Error creating query engine: {e}")
-        raise HTTPException(status_code=500, detail="Error creating query engine")
+#     try:
+#         index = load_index_from_storage(storage_context)    
+#         # Initialize the query engine with the index and top_k_param : 
+#         query_engine_RAG = await create_query_engine(index,top_k_param)
+#         return query_engine_RAG
+#     except Exception as e:
+#         logs.log.error(f"Error creating query engine: {e}")
+#         raise HTTPException(status_code=500, detail="Error creating query engine")
    
 @app.post("/api/math-query")
 async def query_llamaindex(request: QueryRequest):
@@ -155,7 +178,6 @@ async def query_llamaindex(request: QueryRequest):
         # It will still use a single instance of the query engine to process the requests. That will save memory as the query engine is loaded only once.
         # Concurrent requests will be processed in parallel using threads 
         
- 
         chatbot_response = await run_in_threadpool(app.state.query_engine_RAG.query,request.prompt) 
         logs.log.info(f"Response from query engine: {chatbot_response.response}") 
         if chatbot_response is None:
